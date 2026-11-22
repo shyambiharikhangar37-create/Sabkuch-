@@ -1,941 +1,1672 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b0714">
-<title>सबकुछ — Short Video App</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.1"></script>
-<style>
-:root{
-  --ink:#0b0714;--surface:#171024;--surface2:#221737;--line:#372a52;
-  --rani:#ff2e7e;--saffron:#ff9f1c;--cyan:#22e4ff;--violet:#8b5cf6;
-  --gold:#ffd166;--acid:#7cff6b;--danger:#ff4d5e;--success:#2ee6a8;--warn:#ffb020;--info:#4cc9f0;
-  --txt:#f4effc;--mut:#a795c4;--scrim:rgba(6,3,12,.78);
-  --grad:linear-gradient(100deg,var(--rani),var(--saffron) 55%,var(--violet));
-  --nav-h:64px;--top-h:56px;
-}
-[data-accent="saffron"]{--rani:#ff9f1c;--saffron:#ffd166;--violet:#ff5e00;--grad:linear-gradient(100deg,#ff9f1c,#ffd166 55%,#ff5e00)}
-[data-accent="cyan"]{--rani:#22e4ff;--saffron:#7cff6b;--violet:#4cc9f0;--grad:linear-gradient(100deg,#22e4ff,#7cff6b 55%,#4cc9f0)}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:var(--ink);color:var(--txt);font-family:'Mukta',system-ui,sans-serif;overflow:hidden;display:flex;justify-content:center}
-button{font-family:inherit;cursor:pointer}
-input,select,textarea{font-family:inherit}
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:var(--surface)}
-::-webkit-scrollbar-thumb{background:linear-gradient(var(--rani),var(--violet));border-radius:8px}
-::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
-*{scrollbar-width:thin;scrollbar-color:var(--rani) var(--surface)}
-.ambient{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.ambient i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;animation:drift 26s ease-in-out infinite alternate}
-.ambient i:nth-child(1){width:46vw;height:46vw;left:-12vw;top:-10vw;background:radial-gradient(circle,var(--rani),transparent 70%)}
-.ambient i:nth-child(2){width:40vw;height:40vw;right:-10vw;top:22vh;background:radial-gradient(circle,var(--violet),transparent 70%);animation-delay:-8s}
-.ambient i:nth-child(3){width:36vw;height:36vw;left:16vw;bottom:-14vw;background:radial-gradient(circle,var(--cyan),transparent 70%);animation-delay:-16s}
-@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(5vw,3vh,0) scale(1.1)}}
-body.playing .ambient i{animation-play-state:paused}
-.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
-body.perf .grain,body.perf .ambient{display:none}
-.app{position:relative;z-index:2;width:100%;max-width:450px;height:100dvh;background:var(--ink);display:flex;flex-direction:column;overflow:hidden}
-@media(min-width:520px){body{align-items:center;padding:20px 0}.app{height:min(880px,94vh);border-radius:28px;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(255,255,255,.04),0 30px 80px rgba(0,0,0,.7),0 0 90px rgba(255,46,126,.16)}}
-.topbar{height:var(--top-h);flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:linear-gradient(90deg,rgba(255,46,126,.22),rgba(139,92,246,.22));backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:40;animation:slideDown .5s ease both}
-body.perf .topbar{backdrop-filter:none}
-@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
-.brand{font-family:'Baloo 2',cursive;font-weight:800;font-size:24px;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.5px}
-.brand small{display:block;font-family:'Mukta';font-size:9px;font-weight:600;color:var(--mut);letter-spacing:3px;-webkit-text-fill-color:var(--mut)}
-.top-actions{display:flex;gap:8px;align-items:center}
-.chipbtn{border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--txt);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;transition:.2s}
-.chipbtn:active{transform:scale(.94)}
-.chipbtn.cloud{color:var(--success);border-color:rgba(46,230,168,.4)}
-.chipbtn.demo{color:var(--warn);border-color:rgba(255,176,32,.4)}
-.loadbar{position:absolute;top:var(--top-h);left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--cyan),var(--acid));z-index:41;transition:width .25s linear;box-shadow:0 0 12px var(--cyan)}
-.refresh{position:absolute;top:calc(var(--top-h) + 10px);left:50%;transform:translateX(-50%) translateY(-70px);background:var(--cyan);color:#04202a;padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;display:flex;gap:8px;align-items:center;z-index:42;opacity:0;transition:.25s;pointer-events:none}
-.refresh.show{opacity:1}
-.refresh.spin i{animation:rot 1s linear infinite}
-@keyframes rot{to{transform:rotate(360deg)}}
-.feed{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth;position:relative}
-.feed.hide{display:none}
-.v-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.v-item video{width:100%;height:100%;object-fit:cover;pointer-events:none;position:relative;z-index:0}
-.v-poster{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:rgba(255,255,255,.9);text-align:center;padding:24px}
-.v-poster i{font-size:44px;opacity:.85}
-.v-poster b{font-size:14px;line-height:1.4;max-width:82%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.v-poster span{font-size:11px;opacity:.7}
-.v-shade{position:absolute;left:0;right:0;pointer-events:none;z-index:2}
-.v-shade.top{top:0;height:110px;background:linear-gradient(rgba(0,0,0,.65),transparent)}
-.v-shade.bottom{bottom:0;height:220px;background:linear-gradient(transparent,rgba(0,0,0,.85))}
-.v-tap{position:absolute;inset:0;z-index:3}
-.v-pause{position:absolute;z-index:4;font-size:56px;color:rgba(255,255,255,.85);opacity:0;pointer-events:none;text-shadow:0 4px 20px rgba(0,0,0,.6);transition:opacity .2s}
-.v-pause.on{opacity:1}
-.v-buffer{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:8px;color:#fff;font-size:11px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.7)}
-.v-buffer .ring{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--cyan);animation:rot .9s linear infinite}
-.v-item.buffering .v-buffer{display:flex}
-.v-hearts{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
-.heart-pop{position:absolute;color:var(--rani);font-size:26px;animation:pop .9s ease-out forwards;text-shadow:0 0 14px rgba(255,46,126,.8)}
-@keyframes pop{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}20%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.4);opacity:0}}
-.v-side{position:absolute;right:10px;bottom:96px;z-index:6;display:flex;flex-direction:column;align-items:center;gap:14px}
-.v-ava{width:46px;height:46px;border-radius:50%;background:var(--grad);border:2px solid #fff;color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2';box-shadow:0 4px 14px rgba(0,0,0,.5)}
-.rail{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(18,10,30,.55);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:transform .15s}
-.rail:active{transform:scale(.88)}
-.rail i{font-size:17px}
-.rail span{font-size:9px;font-weight:700}
-.rail.liked{color:var(--rani);border-color:var(--rani);background:rgba(255,46,126,.25)}
-.rail.saved{color:var(--cyan);border-color:var(--cyan);background:rgba(34,228,255,.25)}
-.rail.unsave{color:var(--gold);border-color:var(--gold)}
-.disc{width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--surface2),#000,var(--surface2),#000);border:3px solid var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--gold);animation:rot 4s linear infinite;animation-play-state:paused}
-.v-item.active .disc{animation-play-state:running}
-.app.perf .disc{animation:none}
-.v-meta{position:absolute;left:12px;right:70px;bottom:34px;z-index:6;text-shadow:0 2px 8px rgba(0,0,0,.8)}
-.v-user{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.v-user b{font-size:15px;color:var(--gold);font-weight:700}
-.followchip{border:none;background:var(--rani);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;display:flex;gap:4px;align-items:center}
-.followchip.on{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4)}
-.v-title{font-size:13px;line-height:1.45;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.v-music{margin-top:6px;font-size:11px;color:var(--cyan);display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden}
-.v-music span{animation:tick 9s linear infinite}
-.app.perf .v-music span{animation:none}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-40%)}}
-.v-soundpill{position:absolute;top:calc(var(--top-h) + 12px);left:12px;z-index:7;display:none;align-items:center;gap:6px;border:none;background:rgba(0,0,0,.6);border:1px solid var(--cyan);color:var(--cyan);font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px}
-.app.muted .v-item.active .v-soundpill{display:flex}
-.v-progress{position:absolute;left:0;right:0;bottom:0;height:16px;z-index:7;display:flex;align-items:flex-end}
-.v-progress::before{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.18)}
-.v-buff{position:absolute;left:0;bottom:0;height:3px;width:0%;background:rgba(34,228,255,.45)}
-.v-played{position:absolute;left:0;bottom:0;height:3px;width:0%;background:var(--grad);box-shadow:0 0 8px var(--rani)}
-.bottombar{flex:0 0 auto;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;align-items:center;justify-content:space-around;background:rgba(15,10,26,.96);border-top:1px solid var(--line);z-index:40;animation:slideUp .5s ease both}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.nav{background:none;border:none;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;width:20%;transition:.2s}
-.nav i{font-size:19px}
-.nav.on{color:#fff}
-.nav.up{width:52px;height:38px;margin-top:-14px;border-radius:12px;background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(255,46,126,.45);justify-content:center}
-.nav.up i{font-size:20px}
-.view{position:absolute;inset:0 0 var(--nav-h) 0;background:var(--ink);z-index:30;display:none;flex-direction:column}
-.view.on{display:flex}
-.view-top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(11,7,20,.9);border-bottom:1px solid var(--line)}
-.view-top h2{font-family:'Baloo 2';font-size:18px}
-.back{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff}
-.badge{font-size:11px;color:var(--cyan);border:1px solid rgba(34,228,255,.4);background:rgba(34,228,255,.12);padding:4px 10px;border-radius:999px}
-.scroll{flex:1;min-height:0;overflow-y:auto}
-.savedlist{height:100%;overflow-y:auto;scroll-snap-type:y mandatory}
-.profile{padding:16px;padding-bottom:30px}
-.p-head{text-align:center;margin-bottom:16px}
-.p-ava{width:84px;height:84px;border-radius:50%;background:var(--grad);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2';font-size:34px;font-weight:800;color:#fff;box-shadow:0 0 0 4px var(--surface),0 0 30px rgba(255,46,126,.4)}
-.p-name{font-size:20px;font-weight:700;font-family:'Baloo 2'}
-.guesttag{font-size:10px;color:var(--cyan);border:1px solid rgba(34,228,255,.4);background:rgba(34,228,255,.12);padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
-.p-mail{font-size:12px;color:var(--mut)}
-.p-cta{margin-top:10px;border:none;background:var(--grad);color:#fff;font-weight:700;padding:9px 20px;border-radius:10px}
-.p-stats{display:flex;justify-content:center;gap:22px;margin-top:14px}
-.p-stat b{display:block;font-size:17px;color:var(--cyan);font-family:'Baloo 2'}
-.p-stat span{font-size:10px;color:var(--mut)}
-.ptabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin-bottom:8px}
-.ptab{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--mut);font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px}
-.ptab.on{background:var(--grad);color:#fff;border-color:transparent}
-.ppanel{display:none}
-.ppanel.on{display:block}
-.vrow{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-.vrow video{width:64px;height:88px;object-fit:cover;border-radius:8px;pointer-events:none;flex:0 0 auto}
-.vrow .info{flex:1;min-width:0}
-.vrow .info b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vrow .info span{font-size:11px;color:var(--mut)}
-.vrow .acts{display:flex;gap:6px}
-.iconbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff}
-.iconbtn.del{color:var(--danger);border-color:rgba(255,77,94,.4)}
-.sortrow{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--mut)}
-.sortrow select{flex:1;background:var(--surface);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px}
-.setcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.setcard h4{font-size:13px;color:var(--gold);margin-bottom:10px;display:flex;gap:8px;align-items:center}
-.setrow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:13px;gap:10px}
-.setrow select{background:var(--surface2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
-.switch{width:44px;height:24px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);position:relative;transition:.2s;flex:0 0 auto}
-.switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--mut);transition:.2s}
-.switch[aria-checked="true"]{background:var(--grad);border-color:transparent}
-.switch[aria-checked="true"]::after{left:22px;background:#fff}
-.accents{display:flex;gap:10px}
-.acc{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
-.acc.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.2)}
-.acc.rani{background:linear-gradient(135deg,#ff2e7e,#8b5cf6)}
-.acc.saffron{background:linear-gradient(135deg,#ff9f1c,#ff5e00)}
-.acc.cyan{background:linear-gradient(135deg,#22e4ff,#7cff6b)}
-.money{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.money h4{font-size:13px;color:var(--gold);margin-bottom:8px;display:flex;gap:8px}
-.mlabel{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:6px}
-.mbar{height:8px;border-radius:6px;background:var(--surface2);overflow:hidden}
-.mbar i{display:block;height:100%;background:var(--grad);transition:width .4s}
-.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--mut);text-align:center;padding:24px}
-.empty i{font-size:46px;opacity:.5}
-.empty button{border:none;background:var(--grad);color:#fff;font-weight:700;padding:10px 22px;border-radius:10px}
-.skel{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-.skel .ring{width:64px;height:64px;border-radius:50%;border:4px solid var(--surface2);border-top-color:var(--rani);animation:rot 1s linear infinite}
-.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;visibility:hidden;pointer-events:none}
-.sheet.open{visibility:visible;pointer-events:auto}
-.sheet-backdrop{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:.25s}
-.sheet.open .sheet-backdrop{opacity:1}
-.sheet-panel{position:relative;width:100%;max-width:450px;max-height:86dvh;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-bottom:none;border-radius:22px 22px 0 0;padding:18px;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.9,.3,1);display:flex;flex-direction:column;gap:12px}
-.sheet.open .sheet-panel{transform:translateY(0)}
-.sheet-panel h3{font-family:'Baloo 2';text-align:center;color:var(--gold);font-size:18px}
-.field{background:var(--surface2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px;font-size:14px;outline:none;width:100%}
-.field:focus{border-color:var(--rani)}
-.btn{border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;color:#fff}
-.btn.primary{background:var(--grad)}
-.btn.ghost{background:var(--surface2);border:1px solid var(--line);color:var(--txt)}
-.btn.danger{background:var(--danger)}
-.btn:disabled{opacity:.5}
-.btnrow{display:flex;gap:10px}
-.btnrow .btn{flex:1}
-.upreview{width:100%;max-height:200px;object-fit:cover;border-radius:12px;background:#000}
-.upmeta{font-size:11px;color:var(--mut);text-align:center}
-.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{border:1px solid var(--line);background:var(--surface2);color:var(--cyan);font-size:11px;padding:5px 10px;border-radius:999px}
-.upbar{height:8px;border-radius:6px;background:var(--surface2);overflow:hidden}
-.upbar i{display:block;height:100%;width:0%;background:var(--grad);transition:width .2s}
-.upstage{font-size:11px;color:var(--cyan);text-align:center;min-height:14px}
-.count{font-size:10px;color:var(--mut);text-align:right}
-.toggleline{text-align:center;font-size:12px;color:var(--mut)}
-.toggleline a{color:var(--cyan);text-decoration:underline;cursor:pointer}
-.cm-list{display:flex;flex-direction:column;gap:10px;max-height:40dvh;overflow-y:auto}
-.cm{display:flex;gap:10px}
-.cm .ava{width:32px;height:32px;border-radius:50%;background:var(--grad);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
-.cm .body{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;flex:1}
-.cm .body b{display:block;font-size:11px;color:var(--gold)}
-.cm-input{display:flex;gap:8px}
-.cm-input .field{flex:1}
-.cm-input .btn{flex:0 0 auto;padding:12px 16px}
-.dt-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.dt-stat{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
-.dt-stat b{display:block;font-size:15px;color:var(--cyan);font-family:'Baloo 2'}
-.dt-stat span{font-size:10px;color:var(--mut)}
-.dt-title{font-size:14px;line-height:1.5}
-.dc-line{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:1.6;white-space:pre-wrap}
-.dc-line.ok{border-color:rgba(46,230,168,.4)}
-.dc-line.bad{border-color:rgba(255,77,94,.4)}
-.sr-item{display:flex;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;align-items:center;width:100%;text-align:left;color:var(--txt)}
-.sr-item video{width:52px;height:70px;object-fit:cover;border-radius:6px;pointer-events:none}
-.sr-item b{display:block;font-size:12px;color:var(--gold)}
-.sr-item span{font-size:11px;color:var(--mut);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 16px);z-index:80;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(420px,92vw);pointer-events:none}
-.toast{pointer-events:auto;display:flex;align-items:center;gap:10px;background:rgba(20,12,34,.96);border:1px solid var(--line);border-left:4px solid var(--info);border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:toastIn .3s ease both;max-width:100%}
-.toast.success{border-left-color:var(--success)}
-.toast.error{border-left-color:var(--danger)}
-.toast.warn{border-left-color:var(--warn)}
-.toast button{border:none;background:var(--grad);color:#fff;font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;flex:0 0 auto}
-@keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.exit-screen{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:24px;background:radial-gradient(circle at 50% 30%,rgba(255,46,126,.18),transparent 60%),radial-gradient(circle at 70% 80%,rgba(34,228,255,.14),transparent 60%),var(--ink)}
-.exit-screen.on{display:flex}
-.exit-screen .big{font-size:60px;animation:wave 1.6s ease-in-out infinite}
-@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(14deg)}75%{transform:rotate(-10deg)}}
-.exit-screen h2{font-family:'Baloo 2';font-size:28px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.exit-screen p{color:var(--mut);font-size:13px;max-width:300px;line-height:1.6}
-.exit-screen .btn{min-width:200px}
-:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-.app.rm *{animation:none!important;transition:none!important}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>सबकुछ - वीडियो ऐप</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html {
+            scroll-snap-type: y proximity;
+            scroll-behavior: smooth;
+            scroll-padding-top: 100px;
+            scroll-padding-bottom: 140px;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1410;
+            color: #fff;
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2e7d32, #c62828, #f9a825);
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            min-height: 50px;
+        }
+        
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            flex-shrink: 0;
+        }
+        
+        .brand-img {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            border-radius: 10px;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+            animation: brandPulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes brandPulse {
+            0%, 100% { filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
+            50%      { filter: drop-shadow(0 0 8px rgba(244,67,54,0.7)); }
+        }
+
+        .ad-frame {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            padding-left: 8px;
+            min-height: 40px;
+        }
+
+        .ad-placeholder {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px dashed rgba(249, 168, 37, 0.6);
+            color: #f9a825;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 290px;
+            height: 38px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .categories {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 15px;
+            gap: 10px;
+            background: #1a241a;
+            position: sticky;
+            top: 50px;
+            z-index: 90;
+            overscroll-behavior-x: contain;
+        }
+        
+        .category-btn {
+            background: #2a3a2a; color: #fff; border: none;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer;
+            white-space: nowrap; transition: all 0.3s; font-size: 13px;
+        }
+        .category-btn.active { background: #c62828; }
+        .category-btn:hover { background: #f9a825; color: #000; }
+        
+        .video-list { padding: 10px; }
+        
+        .video-card {
+            background: #1a241a; border-radius: 12px; margin-bottom: 15px;
+            overflow: visible; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border: 1px solid #2a3a2a; position: relative; z-index: 1;
+            scroll-snap-align: start;
+            scroll-snap-stop: normal;
+        }
+        
+        .video-card.portrait-card {
+            overflow: hidden;
+            background: #000;
+            max-height: calc(100dvh - 180px);
+        }
+        
+        .ad-card {
+            background: #1a241a; border-radius: 12px; margin-bottom: 15px;
+            overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border: 1px dashed #f9a825; position: relative; z-index: 1;
+            scroll-snap-align: start;
+            scroll-snap-stop: normal;
+        }
+        .ad-card-label {
+            background: rgba(249, 168, 37, 0.15); color: #f9a825; font-size: 10px;
+            text-align: center; padding: 4px; text-transform: uppercase;
+            letter-spacing: 1px; border-bottom: 1px solid rgba(249, 168, 37, 0.3);
+        }
+        .ad-card-content {
+            padding: 20px; text-align: center; min-height: 120px;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; background: rgba(0,0,0,0.2);
+        }
+        .ad-card-content h3 { color: #f9a825; font-size: 16px; margin-bottom: 8px; }
+        .ad-card-content p { color: #aaa; font-size: 12px; }
+        
+        .ad-card video:not([muted]),
+        .ad-card audio:not([muted]) {
+            display: none !important;
+        }
+        
+        .video-wrapper {
+            position: relative; width: 100%; padding-bottom: 56.25%;
+            height: 0; background: #000; overflow: hidden; z-index: 1000;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .video-wrapper.portrait {
+            width: 100%; 
+            max-width: 100%; 
+            margin: 0;
+            padding-bottom: 0;
+            height: calc(100dvh - 180px);
+            max-height: 75dvh;
+            background: #000;
+            overflow: hidden; 
+            z-index: 1000; 
+            border-radius: 0;
+            position: relative;
+        }
+        
+        /* ✅ FIX: Loader पूरी तरह हट जाएगा जब player ready हो */
+        .video-loader {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1005;
+        }
+        .video-loader.hidden {
+            display: none !important;
+        }
+        .loader-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(249, 168, 37, 0.2);
+            border-top: 4px solid #f9a825;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loader-text {
+            color: #f9a825;
+            font-size: 12px;
+            margin-top: 12px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* ✅ Tap-play overlay - केवल तब तक दिखेगा जब तक player ready न हो */
+        .tap-play-overlay {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1006; background: rgba(0,0,0,0.35);
+        }
+        .tap-play-overlay.hidden {
+            display: none !important;
+        }
+        .tap-play-btn {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: rgba(198,40,40,0.92); color: #fff; font-size: 26px;
+            border: 2px solid #fff; display: flex; align-items: center;
+            justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        .tap-play-btn:active { transform: scale(0.92); }
+
+        .youtube-player-div {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;
+        }
+        
+        .video-wrapper.portrait .youtube-player-div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .youtube-player-div iframe {
+            pointer-events: auto !important;
+            width: 100% !important;
+            height: 100% !important;
+            touch-action: manipulation;
+        }
+
+        .video-wrapper:fullscreen,
+        .video-wrapper:-webkit-full-screen,
+        .video-wrapper:-moz-full-screen,
+        .video-wrapper:-ms-fullscreen {
+            width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+            max-width: 100vw !important; max-height: 100vh !important; max-height: 100dvh !important;
+            padding-bottom: 0 !important; background: #000 !important; display: flex !important;
+            align-items: center !important; justify-content: center !important; position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+            z-index: 2147483647 !important; margin: 0 !important; border: none !important;
+            overflow: hidden !important; border-radius: 0 !important;
+        }
+        .video-wrapper:fullscreen .youtube-player-div,
+        .video-wrapper:-webkit-full-screen .youtube-player-div,
+        .video-wrapper:-moz-full-screen .youtube-player-div,
+        .video-wrapper:-ms-fullscreen .youtube-player-div,
+        .video-wrapper:fullscreen iframe,
+        .video-wrapper:-webkit-full-screen iframe,
+        .video-wrapper:-moz-full-screen iframe,
+        .video-wrapper:-ms-fullscreen iframe {
+            width: 100% !important; height: 100% !important; min-width: 100% !important;
+            min-height: 100% !important; position: absolute !important; top: 0 !important;
+            left: 0 !important; right: 0 !important; bottom: 0 !important; border: none !important;
+            z-index: 2147483647 !important; object-fit: contain !important;
+        }
+
+        .fullscreen-controls { position: absolute; top: 10px; right: 10px; z-index: 1010; display: none; }
+        .video-wrapper:fullscreen .fullscreen-controls,
+        .video-wrapper:-webkit-full-screen .fullscreen-controls,
+        .video-wrapper:-moz-full-screen .fullscreen-controls,
+        .video-wrapper:-ms-fullscreen .fullscreen-controls {
+            display: flex !important; position: absolute !important; top: 15px !important;
+            right: 15px !important; z-index: 2147483647 !important;
+        }
+        .close-fullscreen {
+            background: rgba(0,0,0,0.7); color: #fff; border: 2px solid #fff; width: 40px;
+            height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; pointer-events: auto !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: transform 0.2s; z-index: 2147483647 !important;
+        }
+        .close-fullscreen:active { background: rgba(255,255,255,0.2); transform: scale(0.95); }
+        
+        .video-actions-compact {
+            display: flex; justify-content: space-around; align-items: center; padding: 5px 8px;
+            background: #1a241a; border-top: 1px solid #2a3a2a;
+            position: relative; z-index: 10;
+        }
+        
+        /* ✅ Side actions - केवल तब तक दिखेंगे जब तक player ready न हो */
+        .video-actions-side {
+            position: absolute;
+            right: 12px;
+            bottom: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 1010;
+            pointer-events: none; 
+            transition: opacity 0.3s ease;
+        }
+        .video-actions-side.hidden {
+            display: none !important;
+        }
+        
+        .action-btn-compact {
+            background: none; border: none; color: #fff; display: flex; flex-direction: column;
+            align-items: center; gap: 1px; cursor: pointer; padding: 2px 6px;
+            transition: all 0.2s; position: relative; z-index: 10;
+        }
+        .action-btn-compact:hover { color: #f9a825; transform: scale(1.1); }
+        .action-btn-compact.liked { color: #ff4757; }
+        .action-btn-compact.saved { color: #f9a825; }
+        
+        .video-actions-side .action-btn-compact {
+            pointer-events: auto;
+        }
+
+        .action-btn-compact .icon { 
+            font-size: 20px; 
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .share-icon-svg svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+        }
+        
+        .action-btn-compact .label { 
+            font-size: 9px; 
+            font-weight: 600; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8); 
+        }
+        
+        .video-actions-side .action-btn-compact .icon { font-size: 24px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8)); }
+        .video-actions-side .share-icon-svg svg { width: 24px; height: 24px; }
+        .video-actions-side .action-btn-compact .label { font-size: 10px; }
+        
+        .video-info-compact { padding: 10px 14px 8px 14px; position: relative; z-index: 10; background: #1a241a; }
+        
+        /* ✅ Video info overlay - केवल तब तक दिखेगा जब तक player ready न हो */
+        .video-info-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 70px;
+            padding: 12px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
+            z-index: 1005;
+            color: #fff;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .video-info-overlay.hidden {
+            display: none !important;
+        }
+        
+        .video-title-compact {
+            font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 6px; line-height: 1.4;
+            display: block;
+            word-wrap: break-word;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        
+        .video-desc-compact { 
+            font-size: 12px; color: #ddd; 
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.5; 
+            margin-bottom: 4px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .comment-section { padding: 12px 15px; background: #0f1410; position: relative; z-index: 10; border-top: 1px solid #2a3a2a; }
+        .comment-section h4 { color: #f9a825; font-size: 13px; margin-bottom: 8px; }
+        .comment-input { display: flex; gap: 8px; margin-bottom: 10px; }
+        .comment-input input { flex: 1; background: #1a241a; color: #fff; border: 1px solid #2a3a2a; border-radius: 20px; padding: 8px 14px; font-size: 12px; outline: none; }
+        .comment-input button { background: #2e7d32; color: #fff; border: none; padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.3s; }
+        .comment-input button:hover { opacity: 0.9; }
+        .comments-list { max-height: 200px; overflow-y: auto; }
+        .comment-item { background: #1a241a; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .comment-item .del { color: #c62828; cursor: pointer; background: none; border: none; font-size: 14px; }
+        .comment-item .name { color: #f9a825; font-weight: bold; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: #1a241a; border-radius: 12px; padding: 15px; width: 95%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .modal-content h3 { color: #f9a825; margin-bottom: 12px; text-align: center; font-size: 16px; }
+        .share-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+        .share-btn { background: #2a3a2a; border: none; color: #fff; padding: 6px 4px; border-radius: 8px; cursor: pointer; font-size: 11px; text-align: center; transition: all 0.3s; }
+        .share-btn:hover { background: #3a4a3a; }
+        .share-btn .icon { font-size: 20px; display: block; margin-bottom: 2px; }
+        .close-modal { width: 100%; background: #c62828; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-top: 10px; transition: all 0.3s; }
+        .close-modal:hover { opacity: 0.9; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a241a; display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); z-index: 1000; border-top: 2px solid #2e7d32; }
+        .nav-item { text-align: center; color: #aaa; cursor: pointer; transition: color 0.3s; flex: 1; }
+        .nav-item.active { color: #f9a825; }
+        .nav-item span { display: block; font-size: 9px; margin-top: 2px; }
+        
+        .content { padding-bottom: 80px; }
+        .categories::-webkit-scrollbar { display: none; }
+        .categories { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #2e7d32; color: #fff; padding: 10px 20px; border-radius: 20px; z-index: 3000; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-size: 13px; }
+        .toast.show { opacity: 1; }
+        
+        body.fullscreen-mode .header,
+        body.fullscreen-mode .categories,
+        body.fullscreen-mode .bottom-nav,
+        body.fullscreen-mode .ad-card { display: none !important; }
+        body.fullscreen-mode .content { padding-bottom: 0 !important; height: 100vh !important; height: 100dvh !important; overflow: hidden !important; }
+
+        .creator-rewards-card {
+            background: linear-gradient(135deg, #1a241a 0%, #0f1410 100%);
+            border: 1px solid #2a3a2a;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 15px auto;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        
+        .rewards-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a3a2a;
+        }
+        
+        .rewards-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #f9a825;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .founding-badge {
+            background: linear-gradient(135deg, #f9a825, #c62828);
+            color: #fff;
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            animation: badgeGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes badgeGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(249,168,37,0.5); }
+            50% { box-shadow: 0 0 15px rgba(249,168,37,0.9); }
+        }
+        
+        .progress-item { margin-bottom: 14px; }
+        .progress-label {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;
+        }
+        .progress-label .name { color: #fff; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .progress-label .value { color: #aaa; font-size: 11px; }
+        .progress-bar-bg {
+            width: 100%; height: 8px; background: #2a3a2a; border-radius: 10px; overflow: hidden; position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 10px; transition: width 1s ease-in-out; position: relative; overflow: hidden;
+        }
+        .progress-bar-fill::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        
+        .progress-fill-followers { background: linear-gradient(90deg, #2e7d32, #4caf50); }
+        .progress-fill-views { background: linear-gradient(90deg, #c62828, #f44336); }
+        .progress-fill-watchtime { background: linear-gradient(90deg, #f9a825, #ffeb3b); }
+        .progress-complete { background: linear-gradient(90deg, #2e7d32, #4caf50) !important; }
+        
+        .reward-status {
+            margin-top: 12px; padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600;
+        }
+        .status-not-eligible { background: rgba(158, 158, 158, 0.15); color: #9e9e9e; border: 1px solid rgba(158, 158, 158, 0.3); }
+        .status-processing {
+            background: rgba(249, 168, 37, 0.15); color: #f9a825; border: 1px solid rgba(249, 168, 37, 0.4);
+            animation: pulseBorder 2s ease-in-out infinite;
+        }
+        @keyframes pulseBorder { 0%, 100% { border-color: rgba(249, 168, 37, 0.4); } 50% { border-color: rgba(249, 168, 37, 0.9); } }
+        .status-dispatched { background: rgba(46, 125, 50, 0.15); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); }
+        
+        .trust-tracker {
+            margin-top: 12px; padding: 10px; background: rgba(46, 125, 50, 0.1); border-radius: 10px;
+            border: 1px solid rgba(46, 125, 50, 0.3); font-size: 11px; color: #aaa; text-align: center; line-height: 1.5;
+        }
+        .trust-tracker strong { color: #4caf50; }
+        
+        .claim-reward-btn {
+            width: 100%; margin-top: 12px; background: linear-gradient(135deg, #c62828, #f9a825); color: #fff;
+            border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;
+            transition: all 0.3s; box-shadow: 0 4px 12px rgba(198,40,40,0.4);
+        }
+        .claim-reward-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(198,40,40,0.6); }
+        .claim-reward-btn:disabled { background: #2a3a2a; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        @media (orientation: landscape) {
+            html { scroll-snap-type: none !important; scroll-padding-top: 0 !important; scroll-padding-bottom: 0 !important; }
+            .header, .categories, .bottom-nav, .ad-card, .video-actions-compact, .video-info-compact, .comment-section { display: none !important; }
+            body { background: #000 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important; }
+            .content { padding: 0 !important; margin: 0 !important; height: 100vh !important; height: 100dvh !important; overflow: hidden !important; }
+            .video-list { padding: 0 !important; margin: 0 !important; height: 100vh !important; height: 100dvh !important; width: 100vw !important; overflow-y: auto !important; overflow-x: hidden !important; scroll-snap-type: y mandatory !important; scroll-padding: 0 !important; display: flex !important; flex-direction: column !important; }
+            .video-card { margin: 0 !important; padding: 0 !important; border-radius: 0 !important; border: none !important; border-bottom: 1px solid #2a3a2a !important; height: 100vh !important; height: 100dvh !important; min-height: 100vh !important; min-height: 100dvh !important; max-height: 100vh !important; max-height: 100dvh !important; width: 100vw !important; background: #000 !important; display: flex !important; flex-direction: column !important; flex-shrink: 0 !important; scroll-snap-align: start !important; scroll-snap-stop: always !important; overflow: hidden !important; }
+            .video-wrapper, .video-wrapper.portrait { width: 100% !important; height: 100% !important; padding-bottom: 0 !important; margin: 0 !important; max-width: 100% !important; position: relative !important; background: #000 !important; flex: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important; border-radius: 0 !important; }
+            .youtube-player-div, .youtube-player-div iframe { width: 100% !important; height: 100% !important; min-width: 100% !important; min-height: 100% !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; border: none !important; z-index: 1000 !important; object-fit: contain !important; }
+        }
+    </style>
 </head>
 <body>
-<div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
-<div class="grain" aria-hidden="true"></div>
-<div class="app" id="app">
-  <header class="topbar">
-    <div class="brand">सबकुछ<small>SABKUCH</small></div>
-    <div class="top-actions">
-      <button class="chipbtn cloud" id="modeBadge" title="DB स्थिति / जाँच"><i class="fas fa-cloud"></i> Cloud</button>
-      <button class="chipbtn" id="soundBtn" title="आवाज़"><i class="fas fa-volume-xmark"></i></button>
+    <div class="header" id="mainHeader">
+        <div class="brand-logo">
+            <img src="logo.jpg" alt="सबकुछ" class="brand-img">
+        </div>
+        <div class="ad-frame">
+            <div class="ad-placeholder">📢 विज्ञापन स्थान (Ad Space)</div>
+        </div>
     </div>
-  </header>
-  <div class="loadbar" id="loadbar"></div>
-  <div class="refresh" id="refreshInd"><i class="fas fa-sync-alt"></i><span id="refreshText">नीचे खींचें…</span></div>
-  <main class="feed" id="feed" aria-label="वीडियो फ़ीड"></main>
-  <section class="view" id="savedView">
-    <div class="view-top"><button class="back" id="savedBack"><i class="fas fa-arrow-left"></i></button><h2>सेव किए वीडियो</h2><span class="badge" id="savedCount">0</span></div>
-    <div class="savedlist" id="savedList"></div>
-  </section>
-  <section class="view" id="profileView">
-    <div class="view-top"><button class="back" id="profileBack"><i class="fas fa-arrow-left"></i></button><h2>प्रोफ़ाइल</h2><span></span></div>
-    <div class="scroll"><div class="profile" id="profileContent"></div></div>
-  </section>
-  <nav class="bottombar">
-    <button class="nav on" id="navHome"><i class="fas fa-house"></i>होम</button>
-    <button class="nav" id="navSearch"><i class="fas fa-magnifying-glass"></i>खोज</button>
-    <button class="nav up" id="navUpload" aria-label="अपलोड"><i class="fas fa-plus"></i></button>
-    <button class="nav" id="navUser"><i class="fas fa-user"></i>प्रोफ़ाइल</button>
-    <button class="nav" id="navSaved"><i class="fas fa-bookmark"></i>सेव</button>
-  </nav>
-</div>
-<input type="file" id="fileInput" accept="video/*" hidden>
+    
+    <div class="content">
+        <div id="page-home" class="page-section">
+            <div class="categories" id="mainCategories"></div>
+            <div class="video-list" id="videoList"></div>
+        </div>
 
-<div class="sheet" id="uploadSheet"><div class="sheet-backdrop" data-close="uploadSheet"></div><div class="sheet-panel">
-  <h3><i class="fas fa-clapperboard"></i> नया वीडियो</h3>
-  <video class="upreview" id="upPreview" muted playsinline loop></video>
-  <div class="upmeta" id="upName">—</div><div class="upmeta" id="upMeta">—</div>
-  <input class="field" id="upTitle" maxlength="120" placeholder="वीडियो का टाइटल लिखें…">
-  <div class="count" id="upCount">0 / 120</div>
-  <div class="tags" id="upTags"></div>
-  <div class="upbar"><i id="upBar"></i></div><div class="upstage" id="upStage"></div>
-  <button class="btn primary" id="upPublish"><i class="fas fa-paper-plane"></i> पब्लिश करें</button>
-  <button class="btn ghost" id="upCancel">रद्द करें</button>
-</div></div>
+        <div id="page-search" class="page-section" style="display: none;">
+            <div style="padding: 20px; text-align: center;">
+                <h2 style="color: #f9a825; margin-bottom: 20px;">🔍 वीडियो खोजें</h2>
+                <div style="display: flex; gap: 10px; max-width: 400px; margin: 0 auto;">
+                    <input type="text" id="searchInput" placeholder="वीडियो का नाम लिखें..." style="flex: 1; background: #1a241a; color: #fff; border: 1px solid #2a3a2a; border-radius: 20px; padding: 10px 15px; font-size: 14px; outline: none;">
+                    <button onclick="performSearch()" style="background: #2e7d32; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s;">खोजें</button>
+                </div>
+                <div id="searchResults" class="video-list" style="margin-top: 20px; text-align: left;"></div>
+            </div>
+        </div>
 
-<div class="sheet" id="authSheet"><div class="sheet-backdrop" data-close="authSheet"></div><div class="sheet-panel">
-  <h3 id="authTitle">Login करें</h3>
-  <input class="field" id="authUser" placeholder="Username">
-  <input class="field" id="authEmail" type="email" placeholder="Email">
-  <input class="field" id="authPass" type="password" placeholder="Password">
-  <button class="btn primary" id="authSubmit">Login</button>
-  <div class="toggleline"><span id="authToggleText">Account नहीं है?</span> <a id="authToggleLink">Signup करें</a></div>
-  <button class="btn ghost" id="authDoctor"><i class="fas fa-screwdriver-wrench"></i> DB जाँच करें</button>
-  <button class="btn ghost" id="authCancel">रद्द करें</button>
-</div></div>
+        <div id="page-saved" class="page-section" style="display: none;">
+            <div style="padding: 15px;">
+                <h2 style="color: #f9a825; margin-bottom: 15px; text-align: center;">💾 सेव किए गए वीडियो</h2>
+                <div id="saved-list" class="video-list"></div>
+            </div>
+        </div>
 
-<div class="sheet" id="editSheet"><div class="sheet-backdrop" data-close="editSheet"></div><div class="sheet-panel">
-  <h3><i class="fas fa-pen"></i> टाइटल बदलें</h3>
-  <input class="field" id="edTitle" maxlength="120" placeholder="नया टाइटल…">
-  <button class="btn primary" id="edSave">सेव करें</button>
-  <button class="btn ghost" id="edCancel">रद्द करें</button>
-</div></div>
+        <div id="page-upload" class="page-section" style="display: none;">
+            <div style="padding: 20px; text-align: center;">
+                <h2 style="color: #f9a825; margin-bottom: 20px;">➕ वीडियो जोड़ें</h2>
+                <div style="background: #1a241a; padding: 20px; border-radius: 12px; max-width: 400px; margin: 0 auto; border: 1px solid #2a3a2a;">
+                    <p style="color: #aaa; margin-bottom: 15px;">अपना वीडियो YouTube लिंक के साथ यहाँ साझा करें।</p>
+                    <input type="text" id="uploadTitle" placeholder="वीडियो का शीर्षक" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; outline: none;">
+                    <input type="text" id="uploadYoutubeId" placeholder="YouTube लिंक या ID (जैसे: dQw4w9WgXcQ)" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; outline: none;">
+                    <select id="uploadCategory" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; outline: none;">
+                        <option value="song">लोकगीत</option>
+                        <option value="drama">नाटक</option>
+                        <option value="comedy">हास्य</option>
+                        <option value="story">कहानी</option>
+                        <option value="culture">संस्कृति</option>
+                    </select>
+                    <select id="uploadAspectRatio" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; margin-bottom: 15px; font-size: 14px; outline: none;">
+                        <option value="16:9">16:9 (लैंडस्केप / सामान्य वीडियो)</option>
+                        <option value="9:16">9:16 (पोर्ट्रेट / YouTube Shorts)</option>
+                    </select>
+                    <button onclick="submitVideo()" style="width: 100%; background: #c62828; color: #fff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s;">सबमिट करें</button>
+                </div>
+            </div>
+        </div>
 
-<div class="sheet" id="commentsSheet"><div class="sheet-backdrop" data-close="commentsSheet"></div><div class="sheet-panel">
-  <h3 id="cmTitle">कमेंट्स</h3>
-  <div class="cm-list" id="cmList"></div>
-  <div class="cm-input"><input class="field" id="cmInput" placeholder="कमेंट लिखें…"><button class="btn primary" id="cmSend"><i class="fas fa-paper-plane"></i></button></div>
-  <button class="btn ghost" id="cmClose">बंद करें</button>
-</div></div>
+        <div id="page-profile" class="page-section" style="display: none;">
+            <div style="padding: 20px; text-align: center;">
+                <div style="width: 80px; height: 80px; background: #1976d2; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="45" height="45" viewBox="0 0 24 24" fill="#4caf50">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <h2 id="profileName" style="color: #f9a825; margin-bottom: 5px;">अतिथि</h2>
+                <p style="color: #aaa; margin-bottom: 10px;">इस समुदाय के सदस्य</p>
+                
+                <div id="loginSection" style="margin-bottom: 20px;">
+                    <button id="loginBtn" onclick="toggleLogin()" style="background: #f9a825; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s;">लॉगिन करें (वैकल्पिक)</button>
+                    <button id="logoutBtn" onclick="toggleLogin()" style="background: #c62828; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: none; transition: all 0.3s;">लॉगआउट करें</button>
+                </div>
+                
+                <div class="creator-rewards-card" id="creatorRewardsCard">
+                    <div class="rewards-header">
+                        <div class="rewards-title">🏆 क्रिएटर रिवॉर्ड्स</div>
+                        <div class="founding-badge" id="foundingBadge" style="display: none;">
+                            FOUNDING CREATOR #<span id="foundingNumber">0</span>/50
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span class="name">👥 फॉलोअर्स</span>
+                            <span class="value" id="followersValue">0 / 2,000</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill progress-fill-followers" id="followersBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span class="name">👁️ व्यूज़</span>
+                            <span class="value" id="viewsValue">0 / 1,000,000</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill progress-fill-views" id="viewsBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span class="name">⏱️ वॉच टाइम (घंटे)</span>
+                            <span class="value" id="watchtimeValue">0 / 1,500</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill progress-fill-watchtime" id="watchtimeBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="reward-status status-not-eligible" id="rewardStatus">
+                        ⏳ मानदंड पूरे करें और मोनेटाइजेशन अनलॉक करें
+                    </div>
+                    
+                    <div class="trust-tracker">
+                        🔒 <strong>भरोसा गारंटी:</strong> मानदंड पूरे होने पर 30-45 दिनों में रिवॉर्ड आपके घर पहुँचेगा। हमारी टीम personally सत्यापन करती है।
+                    </div>
+                    
+                    <button class="claim-reward-btn" id="claimRewardBtn" disabled onclick="claimReward()">
+                        🔒 रिवॉर्ड क्लेम करें (मानदंड पूरे करें)
+                    </button>
+                </div>
+                
+                <div style="background: #1a241a; padding: 15px; border-radius: 12px; max-width: 400px; margin: 15px auto; border: 1px solid #2a3a2a; text-align: left;">
+                    <h3 style="color: #fff; font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid #2a3a2a; padding-bottom: 10px;">⚙️ सेटिंग्स</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #aaa; font-size: 13px; display: block; margin-bottom: 5px;">आपका नाम</label>
+                        <input type="text" id="profileNameInput" placeholder="नाम दर्ज करें" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #aaa; font-size: 13px; display: block; margin-bottom: 5px;">पता (रिवॉर्ड के लिए)</label>
+                        <textarea id="profileAddress" placeholder="पूरा पता, शहर, पिन कोड" style="width: 100%; background: #0f1410; color: #fff; border: 1px solid #2a3a2a; border-radius: 8px; padding: 10px; font-size: 14px; outline: none; min-height: 60px; resize: vertical;"></textarea>
+                    </div>
+                    <button onclick="saveProfile()" style="width: 100%; background: #2e7d32; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 10px; transition: all 0.3s;">प्रोफ़ाइल सहेजें</button>
+                    <button onclick="clearAllData()" style="width: 100%; background: #c62828; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s;">सभी डेटा साफ़ करें</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="sheet" id="detailSheet"><div class="sheet-backdrop" data-close="detailSheet"></div><div class="sheet-panel">
-  <h3>वीडियो जानकारी</h3><div id="dtBody"></div>
-  <button class="btn ghost" id="dtClose">बंद करें</button>
-</div></div>
+    <div class="bottom-nav" id="mainNav"></div>
+    
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <h3>📤 शेयर करें</h3>
+            <div class="share-options"></div>
+            <button class="close-modal" onclick="closeModal()">बंद करें</button>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
 
-<div class="sheet" id="doctorSheet"><div class="sheet-backdrop" data-close="doctorSheet"></div><div class="sheet-panel">
-  <h3><i class="fas fa-screwdriver-wrench"></i> DB जाँच</h3>
-  <div id="dcBody" style="display:flex;flex-direction:column;gap:8px"></div>
-  <button class="btn primary" id="dcRun">जाँच चलाएँ</button>
-  <button class="btn ghost" id="dcCloud"><i class="fas fa-rotate"></i> Cloud से दोबारा जुड़ें</button>
-  <button class="btn ghost" id="dcClose">बंद करें</button>
-</div></div>
+    <script>
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/1EoTOSqfvan9yeUGw05eTssOFVW67vsuPUB0ayhG-YEg/export?format=csv&gid=0";
+        const REWARD_TARGETS = { followers: 2000, views: 1000000, watchtime: 1500 };
+        const FOUNDING_CREATOR_LIMIT = 50;
+        const PLAY_THRESHOLD = 0.5;
+        const EXIT_DELAY = 2000;
+        
+        let videos = [], isLoadingVideos = false, currentShareId = null;
+        let observer = null, visibleVideoId = null, isYtReady = false;
+        let ytPlayers = {}, playerReady = {}, pendingPlay = {}, playWatchdog = {};
+        let hasPlayed = {}, lastPlayAttempt = {};
+        let userGestureDone = false;
+        let syncTimer = null, manualLock = null;
+        let currentPage = 'home', lastBackPressTime = 0; 
+        let isOrientationChanging = false;
 
-<div class="sheet" id="confirmSheet"><div class="sheet-backdrop" data-close="confirmSheet"></div><div class="sheet-panel">
-  <h3 id="cfTitle">पक्का?</h3><div id="cfMsg" style="font-size:13px;color:var(--mut);text-align:center"></div>
-  <div class="btnrow"><button class="btn ghost" id="cfNo">नहीं</button><button class="btn danger" id="cfYes">हाँ</button></div>
-</div></div>
+        const NAV_ITEMS = [
+            { id: 'home', icon: '🏠', label: 'होम' },
+            { id: 'search', icon: '🔍', label: 'खोजें' },
+            { id: 'saved', icon: '💾', label: 'सेव' },
+            { id: 'upload', icon: '➕', label: 'अपलोड' },
+            { id: 'profile', icon: '👤', label: 'प्रोफ़ाइल' }
+        ];
 
-<div class="sheet" id="searchSheet"><div class="sheet-backdrop" data-close="searchSheet"></div><div class="sheet-panel">
-  <h3><i class="fas fa-magnifying-glass"></i> खोजें</h3>
-  <input class="field" id="srInput" placeholder="टाइटल या @username…">
-  <div id="srResults" style="max-height:46dvh;overflow-y:auto"></div>
-  <button class="btn ghost" id="srClose">बंद करें</button>
-</div></div>
+        const CATEGORIES = [
+            { id: 'all', label: 'सभी' },
+            { id: 'song', label: 'लोकगीत' },
+            { id: 'drama', label: 'नाटक' },
+            { id: 'comedy', label: 'हास्य' },
+            { id: 'story', label: 'कहानी' },
+            { id: 'culture', label: 'संस्कृति' }
+        ];
 
-<div class="exit-screen" id="exitScreen">
-  <div class="big">👋</div>
-  <h2>अलविदा! ऐप बंद हो गया</h2>
-  <p>आपका डेटा सुरक्षित सेव है। जब चाहें दोबारा खोलें और वीडियो देखना जारी रखें।</p>
-  <button class="btn primary" id="exitReload"><i class="fas fa-rotate-right"></i> दोबारा खोलें</button>
-</div>
+        const SHARE_OPTIONS = [
+            { platform: 'whatsapp', icon: '💬', label: 'WhatsApp' },
+            { platform: 'facebook', icon: '📘', label: 'Facebook' },
+            { platform: 'twitter', icon: '🐦', label: 'Twitter' },
+            { platform: 'telegram', icon: '✈️', label: 'Telegram' },
+            { platform: 'copy', icon: '🔗', label: 'Copy Link' },
+            { platform: 'more', icon: '⋯', label: 'और' }
+        ];
 
-<div class="toasts" id="toasts"></div>
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/[&<>"']/g, function(match) {
+                const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return escapeMap[match];
+            });
+        }
 
-<script>
-var APPWRITE_ENDPOINT='https://cloud.appwrite.io/v1';
-var PROJECT_ID='6aa2ebbf000296878b87';
-var DB='6aa2ecdd0037d1cdddcd';
-var T='6af981f9002567f02561';
-var BUCKET='6aa2f5a00028668aa537';
-var client=new Appwrite.Client();client.setEndpoint(APPWRITE_ENDPOINT).setProject(PROJECT_ID);
-var databases=new Appwrite.Databases(client);
-var storage=new Appwrite.Storage(client);
-var Q=Appwrite.Query,ID=Appwrite.ID;
-function $(id){return document.getElementById(id);}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function loadJSON(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
-function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+        function renderDynamicButtons() {
+            const navContainer = document.getElementById('mainNav');
+            if (navContainer) {
+                navContainer.innerHTML = NAV_ITEMS.map(item => `
+                    <div class="nav-item ${currentPage === item.id ? 'active' : ''}" onclick="showPage('${item.id}', this)">
+                        ${item.icon}<span>${item.label}</span>
+                    </div>
+                `).join('');
+            }
 
-var lowEnd=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4);
-var prefs={muted:true,autoplay:true,saver:false,motion:false,accent:'rani',perf:lowEnd,window:2};
-var session=null,guestId='',follows={},comments={},mode='cloud',videos=[];
-var localLikes={},localFiles={};
-var viewed={},schema={absent:{},extra:{},map:{},tried:{},tsMode:null};
-var pendingFile=null,pendingURL=null,uploading=false;
-var feedObs=null,savedObs=null,deleteTimers={},confirmCb=null,authMode='login';
-var currentCommentsId=null,currentEditId=null,lastTap=0,lastTapItem=null;
-var activeIndex=0,viewQueue={},stallCount=0,lastAdvance=0,lastCur=0,raisedWindow=false,watchdog=null;
-var lastRootBack=0;
-function handle(){return session?session.username:guestId;}
-function activeId(){return session?(session.$id||session.id):guestId;}
-function tsNum(t){if(typeof t==='number')return t;var n=parseInt(t,10);if(!isNaN(n)&&n>1e11)return n;var d=Date.parse(t);return isNaN(d)?0:d;}
-function norm(k){return String(k).toLowerCase().replace(/_/g,'');}
-var KEYVARIANTS={userid:['userId','userID','userid','user_id','UserID'],videourl:['videoUrl','videoURL','video_url'],fileid:['fileId','fileID','file_id'],uploadedby:['uploadedBy','uploaded_by'],isliked:['isLiked','is_liked'],issaved:['isSaved','is_saved'],isfollowing:['isFollowing','is_following'],timestamp:['timestamp','timeStamp','created_at']};
-function variantsFor(k){return KEYVARIANTS[norm(k)]||[k];}
-function pick(d,keys){for(var i=0;i<keys.length;i++){if(d[keys[i]]!==undefined&&d[keys[i]]!==null)return d[keys[i]];}return undefined;}
+            const catContainer = document.getElementById('mainCategories');
+            if (catContainer) {
+                catContainer.innerHTML = CATEGORIES.map(cat => `
+                    <button class="category-btn ${cat.id === 'all' ? 'active' : ''}" onclick="filterCategory('${cat.id}')">${cat.label}</button>
+                `).join('');
+            }
 
-function idb(){return new Promise(function(res,rej){var r=indexedDB.open('sk-media',1);r.onupgradeneeded=function(){r.result.createObjectStore('blobs');};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
-function idbPut(k,b){return idb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('blobs','readwrite');tx.objectStore('blobs').put(b,k);tx.oncomplete=function(){res();};tx.onerror=function(){rej(tx.error);};});});}
-function idbGet(k){return idb().then(function(db){return new Promise(function(res,rej){var rq=db.transaction('blobs').objectStore('blobs').get(k);rq.onsuccess=function(){res(rq.result);};rq.onerror=function(){rej(rq.error);};});});}
-function idbDel(k){return idb().then(function(db){return new Promise(function(res){var tx=db.transaction('blobs','readwrite');tx.objectStore('blobs').delete(k);tx.oncomplete=function(){res();};tx.onerror=function(){res();};});});}
+            const shareContainer = document.querySelector('.share-options');
+            if (shareContainer) {
+                shareContainer.innerHTML = SHARE_OPTIONS.map(opt => `
+                    <button class="share-btn" onclick="shareVia('${opt.platform}')">
+                        <span class="icon">${opt.icon}</span>${opt.label}
+                    </button>
+                `).join('');
+            }
+        }
 
-function schemaErr(kind,info){var e=new Error(info);e.skKind=kind;e.skInfo=info;return e;}
-function defaultNorm(n,f){
-  if(n==='userid')return f.userId||('@'+handle());
-  if(n==='username')return f.username||handle();
-  if(n==='email')return f.email||'guest@sabkuch.local';
-  if(n==='password')return f.password||'sabkuch';
-  if(n==='title')return f.title||'Untitled';
-  if(n==='videourl')return f.videoUrl||'https://sabkuch.local/none';
-  if(n==='fileid')return f.fileId||'';
-  if(n==='uploadedby')return f.uploadedBy||activeId();
-  if(n==='likes'||n==='comments'||n==='views'||n==='shares')return 0;
-  if(n==='isliked'||n==='issaved'||n==='isfollowing')return false;
-  if(n==='timestamp')return Date.now();
-  return '';
-}
-function baseRow(over){return Object.assign({type:'video',userId:'',username:'',title:'',videoUrl:'',fileId:'',uploadedBy:'',likes:0,comments:0,views:0,shares:0,isLiked:false,isSaved:false,isFollowing:false,timestamp:Date.now()},over);}
-function tsFor(m){if(m==='sec')return Math.floor(Date.now()/1000);if(m==='iso')return new Date().toISOString();return Date.now();}
-function nextTs(cur){if(typeof cur==='number')return cur>1e12?Math.floor(cur/1000):new Date().toISOString();return Date.now();}
-function altVal(v){if(typeof v==='string')return 0;if(typeof v==='number')return false;return '';}
-function translate(p){var ks=Object.keys(p);for(var i=0;i<ks.length;i++){var k=ks[i],a=schema.map[norm(k)];if(a&&a!==k){p[a]=p[k];delete p[k];}}return p;}
-async function smartCreate(data,critical){
-  var p=translate(Object.assign({},data)),k;
-  for(k in schema.extra){if(!(k in p))p[k]=schema.extra[k];}
-  if(schema.tsMode)p.timestamp=tsFor(schema.tsMode);
-  var tries=0,perKey={};
-  while(tries<40){tries++;
-    try{
-      var doc=await databases.createDocument(DB,T,ID.unique(),p);
-      if(typeof p.timestamp==='number')schema.tsMode=p.timestamp>1e12?'ms':'sec';
-      else if(typeof p.timestamp==='string')schema.tsMode='iso';
-      return doc;
-    }catch(err){
-      var m=String((err&&err.message)||err),mm;
-      mm=m.match(/Unknown attribute:?\s*"?([A-Za-z0-9_]+)"?/i);
-      if(mm){var uk=mm[1],n=norm(uk);var tried=schema.tried[n]||[];if(tried.indexOf(uk)<0)tried.push(uk);
-        var cands=variantsFor(uk).filter(function(c){return tried.indexOf(c)<0;});
-        if(cands.length){var nx=cands[0];p[nx]=p[uk];delete p[uk];tried.push(nx);schema.tried[n]=tried;schema.map[n]=nx;continue;}
-        schema.tried[n]=tried;schema.absent[uk]=1;delete p[uk];continue;}
-      mm=m.match(/Missing required attribute:?\s*"?([A-Za-z0-9_]+)"?/i);
-      if(mm){var mk=mm[1],n2=norm(mk),src=null;for(var kk in p){if(norm(kk)===n2&&kk!==mk){src=kk;break;}}
-        if(src){p[mk]=p[src];delete p[src];}else{p[mk]=defaultNorm(n2,data);}
-        schema.map[n2]=mk;schema.extra[mk]=p[mk];continue;}
-      mm=m.match(/Attribute\s+"?([A-Za-z0-9_]+)"?\s+has invalid/i);
-      if(mm){var ik=mm[1];
-        if(ik==='timestamp'){p.timestamp=nextTs(p.timestamp);continue;}
-        if(ik==='type')throw schemaErr('enum',m);
-        if(critical.indexOf(norm(ik))>=0)throw schemaErr('invalid',m);
-        perKey[ik]=(perKey[ik]||0)+1;if(perKey[ik]>3)throw schemaErr('invalid',m);
-        p[ik]=altVal(p[ik]);continue;}
-      if(/must be one of/i.test(m))throw schemaErr('enum',m);
-      throw err;
-    }
-  }
-  throw new Error('schema retry limit');
-}
-async function smartUpdate(id,patch){
-  var p=translate(Object.assign({},patch));
-  if(Object.keys(p).length===0)return null;
-  var tries=0;
-  while(tries<12){tries++;
-    try{return await databases.updateDocument(DB,T,id,p);}
-    catch(err){var m=String((err&&err.message)||err),mm=m.match(/Unknown attribute:?\s*"?([A-Za-z0-9_]+)"?/i);
-      if(mm){var uk=mm[1],n=norm(uk);var tried=schema.tried[n]||[];if(tried.indexOf(uk)<0)tried.push(uk);
-        var cands=variantsFor(uk).filter(function(c){return tried.indexOf(c)<0;});
-        if(cands.length){var nx=cands[0];p[nx]=p[uk];delete p[uk];tried.push(nx);schema.tried[n]=tried;schema.map[n]=nx;continue;}
-        schema.absent[uk]=1;delete p[uk];if(Object.keys(p).length===0)return null;continue;}
-      throw err;}
-  }
-  return null;
-}
-function normalize(d){
-  var id=d.$id||d.id;
-  var uid=pick(d,KEYVARIANTS.userid)||'@unknown';
-  var url=pick(d,KEYVARIANTS.videourl)||'';
-  var fid=pick(d,KEYVARIANTS.fileid)||localFiles[id]||'';
-  var il=pick(d,KEYVARIANTS.isliked);
-  return{id:id,type:'video',userId:uid,username:d.username||'',title:d.title||'',videoUrl:url,fileId:fid,uploadedBy:pick(d,KEYVARIANTS.uploadedby)||'',likes:d.likes||0,comments:d.comments||0,views:d.views||0,shares:d.shares||0,isLiked:(il!==undefined?!!il:!!localLikes[id]),isSaved:!!pick(d,KEYVARIANTS.issaved),timestamp:pick(d,KEYVARIANTS.timestamp)||0};
-}
+        function parseCSVLine(line) {
+            const result = []; let current = ''; let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i], nextChar = line[i + 1];
+                if (char === '"') { if (inQuotes && nextChar === '"') { current += '"'; i++; } else { inQuotes = !inQuotes; } }
+                else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+                else { current += char; }
+            }
+            result.push(current); return result;
+        }
+        function parseCSV(csvText) {
+            if (csvText.charCodeAt(0) === 0xFEFF) csvText = csvText.slice(1);
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) return [];
+            const headers = parseCSVLine(lines[0]); const result = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]); if (values.length < headers.length) continue;
+                const row = {}; headers.forEach((header, index) => { row[header.trim()] = values[index] ? values[index].trim() : ''; });
+                if (row.id) { result.push({ id: parseInt(row.id) || i, title: row.title || 'अज्ञात शीर्षक', desc: row.desc || 'विवरण उपलब्ध नहीं', category: row.category || 'all', youtubeId: row.youtubeId || '', aspectRatio: (row.aspectRatio && row.aspectRatio.trim() === '9:16') ? '9:16' : '16:9' }); }
+            }
+            return result;
+        }
 
-async function cloudList(){
-  var res;
-  try{res=await databases.listDocuments(DB,T,[Q.equal('type','video'),Q.limit(100)]);}
-  catch(e){res=await databases.listDocuments(DB,T,[Q.limit(100)]);}
-  var docs=res.documents.filter(function(d){return d.type==='video';}).map(normalize);
-  docs.sort(function(a,b){return tsNum(b.timestamp)-tsNum(a.timestamp);});
-  return docs;
-}
-var SEEDS=[
- {userId:'@masala_mumbai',title:'मुंबई की बारिश और कटिंग चाय ☔ #mumbai #chai',videoUrl:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',likes:428,views:5210,shares:31},
- {userId:'@pahaadi_safar',title:'हिमालय का सुबह का नज़ारा 🏔️ #travel #pahad',videoUrl:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',likes:892,views:12400,shares:74},
- {userId:'@streetfood_delhi',title:'चांदनी चौक की गोलगप्पे चैलेंज 🌶️ #delhi #streetfood',videoUrl:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',likes:655,views:8900,shares:42},
- {userId:'@desi_beats',title:'ढोल की थाप पर पूरा मोहल्ला नाचा 🥁 #desi #dance',videoUrl:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',likes:1204,views:22100,shares:120}
-];
-async function demoLoad(){
-  var store=loadJSON('sk_demo_videos',null);
-  if(!store){store=SEEDS.map(function(s,i){return Object.assign({id:'seed'+i,type:'video',username:'',fileId:'',uploadedBy:'seed',comments:0,isLiked:false,isSaved:false,timestamp:Date.now()-i*3600000},s);});saveJSON('sk_demo_videos',store);}
-  var out=[];
-  for(var i=0;i<store.length;i++){var v=store[i];
-    if(v.fileId&&v.fileId.indexOf('idb:')===0){try{var b=await idbGet(v.fileId.slice(4));if(b){v.videoUrl=URL.createObjectURL(b);out.push(v);}}catch(e){}}
-    else out.push(v);}
-  out.sort(function(a,b){return tsNum(b.timestamp)-tsNum(a.timestamp);});
-  return out;
-}
-function demoSave(){saveJSON('sk_demo_videos',videos.map(function(v){var c=Object.assign({},v);if(c.fileId&&c.fileId.indexOf('idb:')===0)c.videoUrl=c.fileId;return c;}));}
-async function uploadFile(file,onp){
-  if(mode==='cloud'){var f=await storage.createFile(BUCKET,ID.unique(),file,undefined,onp);return{fileId:f.$id,url:storage.getFileView(BUCKET,f.$id)};}
-  var key='m'+Date.now()+Math.floor(Math.random()*999);await idbPut(key,file);return{fileId:'idb:'+key,url:'idb:'+key};
-}
-async function apiCreateVideo(fields){
-  if(mode==='cloud'){var doc=normalize(await smartCreate(baseRow(fields),['type','userid','title','videourl','timestamp']));localFiles[doc.id]=fields.fileId||'';saveJSON('sk_files',localFiles);doc.fileId=fields.fileId||doc.fileId;return doc;}
-  var v=Object.assign({id:'d'+Date.now()+Math.floor(Math.random()*999)},fields);videos.unshift(v);demoSave();return v;
-}
-async function apiUpdateVideo(id,patch){
-  if(mode==='cloud'){await smartUpdate(id,patch);return;}
-  var v=videos.find(function(x){return x.id===id;});if(v){Object.assign(v,patch);demoSave();}
-}
-async function apiDeleteVideo(id){
-  var v=videos.find(function(x){return x.id===id;});
-  var fid=v?v.fileId:(localFiles[id]||'');
-  if(mode==='cloud'){if(fid&&fid.indexOf('idb:')!==0){try{await storage.deleteFile(BUCKET,fid);}catch(e){}}await databases.deleteDocument(DB,T,id);delete localFiles[id];delete localLikes[id];saveJSON('sk_files',localFiles);saveJSON('sk_likes',localLikes);return;}
-  if(fid&&fid.indexOf('idb:')===0){try{await idbDel(fid.slice(4));}catch(e){}}
-  videos=videos.filter(function(x){return x.id!==id;});demoSave();
-}
-async function apiCreateUser(fields){
-  if(mode==='cloud')return await smartCreate(baseRow(fields),['type','username','email','password']);
-  var users=loadJSON('sk_demo_users',[]);var u=Object.assign({id:'u'+Date.now()},fields);users.push(u);saveJSON('sk_demo_users',users);return u;
-}
-async function apiFindUser(email,pass){
-  if(mode==='cloud'){
-    var docs;
-    try{var r=await databases.listDocuments(DB,T,[Q.equal('type','user'),Q.equal('email',email),Q.equal('password',pass),Q.limit(5)]);docs=r.documents;}
-    catch(e){try{var r2=await databases.listDocuments(DB,T,[Q.equal('type','user'),Q.limit(100)]);docs=r2.documents;}catch(e2){var r3=await databases.listDocuments(DB,T,[Q.limit(100)]);docs=r3.documents;}}
-    docs=docs.filter(function(d){return d.type==='user'&&d.email===email&&d.password===pass;});
-    return docs[0]||null;
-  }
-  var users=loadJSON('sk_demo_users',[]);
-  return users.find(function(u){return u.email===email&&u.password===pass;})||null;
-}
-async function seedCloudIfEmpty(){
-  if(mode!=='cloud'||videos.length||loadJSON('sk_seeded',false))return;
-  try{
-    for(var i=0;i<SEEDS.length;i++){var s=SEEDS[i];
-      var created=await apiCreateVideo({type:'video',userId:s.userId,username:s.userId.replace('@',''),title:s.title,videoUrl:s.videoUrl,fileId:'',uploadedBy:'seed',likes:s.likes,comments:0,views:s.views,shares:s.shares,isLiked:false,isSaved:false,timestamp:Date.now()-i*3600000});
-      videos.push(created);}
-    videos.sort(function(a,b){return tsNum(b.timestamp)-tsNum(a.timestamp);});
-    saveJSON('sk_seeded',true);
-  }catch(e){}
-}
+        async function loadVideosFromSheet() {
+            if (isLoadingVideos) return; 
+            isLoadingVideos = true;
+            try { 
+                showToast("🔄 वीडियो लोड हो रहे हैं..."); 
+                const response = await fetch(SHEET_URL); 
+                let sheetVideos = [];
+                if (response.ok) {
+                    const csvText = await response.text(); 
+                    sheetVideos = parseCSV(csvText); 
+                }
+                const localVideos = JSON.parse(localStorage.getItem('localVideos') || '[]');
+                videos = [...localVideos, ...sheetVideos]; 
+                loadVideos(); 
+            } catch (error) { 
+                console.error("Error loading videos:", error); 
+                showToast("⚠️ वीडियो लोड करने में त्रुटि, लोकल वीडियो दिखाए जा रहे हैं"); 
+                const localVideos = JSON.parse(localStorage.getItem('localVideos') || '[]');
+                videos = localVideos; 
+                loadVideos(); 
+            } finally { 
+                isLoadingVideos = false; 
+            }
+        }
 
-function showToast(msg,type,actionLabel,actionCb,dur){
-  var t=document.createElement('div');t.className='toast '+(type||'info');
-  var icon=type==='success'?'fa-circle-check':type==='error'?'fa-circle-xmark':type==='warn'?'fa-triangle-exclamation':'fa-circle-info';
-  t.innerHTML='<i class="fas '+icon+'"></i><span>'+esc(msg)+'</span>';
-  if(actionLabel){var b=document.createElement('button');b.textContent=actionLabel;b.onclick=function(){if(actionCb)actionCb();t.remove();};t.appendChild(b);}
-  $('toasts').appendChild(t);setTimeout(function(){t.remove();},dur||3500);
-}
-function openSheet(id){closeAllSheets();$(id).classList.add('open');lastRootBack=0;pauseAll();}
-function closeSheet(id){var s=$(id);if(s)s.classList.remove('open');if(!anySheetOpen())resumeActive();}
-function closeAllSheets(){var l=document.querySelectorAll('.sheet.open');for(var i=0;i<l.length;i++)l[i].classList.remove('open');}
-function anySheetOpen(){return !!document.querySelector('.sheet.open');}
-function openConfirm(title,msg,cb){$('cfTitle').textContent=title;$('cfMsg').textContent=msg;confirmCb=cb;openSheet('confirmSheet');}
-function pauseAll(){var l=document.querySelectorAll('video');for(var i=0;i<l.length;i++){try{l[i].pause();}catch(e){}}document.body.classList.remove('playing');}
-function resumeActive(){if(!prefs.autoplay||anySheetOpen())return;var a=document.querySelector('#feed .v-item.active video');if(a&&!$('feed').classList.contains('hide'))a.play().catch(function(){});}
-function setNav(id){var l=document.querySelectorAll('.nav');for(var i=0;i<l.length;i++)l[i].classList.remove('on');$(id).classList.add('on');}
-function applyMuted(){var l=document.querySelectorAll('video');for(var i=0;i<l.length;i++)l[i].muted=prefs.muted;$('app').classList.toggle('muted',prefs.muted);$('soundBtn').innerHTML=prefs.muted?'<i class="fas fa-volume-xmark"></i>':'<i class="fas fa-volume-high"></i>';}
-function applyPrefs(){document.documentElement.setAttribute('data-accent',prefs.accent);$('app').classList.toggle('rm',prefs.motion);$('app').classList.toggle('perf',prefs.perf);document.body.classList.toggle('perf',prefs.perf);applyMuted();}
-function updateBadge(){var b=$('modeBadge');if(mode==='cloud'){b.className='chipbtn cloud';b.innerHTML='<i class="fas fa-cloud"></i> Cloud';}else{b.className='chipbtn demo';b.innerHTML='<i class="fas fa-plug-circle-xmark"></i> डेमो';}}
+        function getVideoRatio(videoId) {
+            const w = document.getElementById('wrapper_' + videoId);
+            if (!w) return 0;
+            const r = w.getBoundingClientRect();
+            const vh = window.innerHeight;
+            const visH = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+            return r.height > 0 ? visH / r.height : 0;
+        }
 
-/* ===== BACK NAVIGATION (backward + double-back exit) ===== */
-function pushTrap(){try{history.pushState({sk:1},'');}catch(e){}}
-function topUI(){
-  var open=document.querySelector('.sheet.open');if(open)return{type:'sheet',id:open.id};
-  if($('profileView').classList.contains('on'))return{type:'view'};
-  if($('savedView').classList.contains('on'))return{type:'view'};
-  return{type:'root'};
-}
-function navigateBack(){
-  var t=topUI();
-  if(t.type==='sheet'){closeSheet(t.id);return true;}
-  if(t.type==='view'){goHome();return true;}
-  return false;
-}
-function showExitScreen(){$('exitScreen').classList.add('on');}
-function exitApp(){
-  flushViews();pauseAll();
-  try{if(window.Android&&typeof window.Android.exit==='function'){window.Android.exit();return;}}catch(e){}
-  try{if(window.flutter_inappwebview&&window.flutter_inappwebview.callHandler){window.flutter_inappwebview.callHandler('exit');return;}}catch(e){}
-  try{window.close();}catch(e){}
-  setTimeout(function(){if(!document.hidden)showExitScreen();},350);
-}
-function handleBack(){
-  if($('exitScreen').classList.contains('on'))return;
-  if(navigateBack()){pushTrap();return;}
-  var now=Date.now();
-  if(now-lastRootBack<2000){lastRootBack=0;exitApp();return;}
-  lastRootBack=now;pushTrap();
-  if(navigator.vibrate)navigator.vibrate(30);
-  showToast('बाहर निकलने के लिए 2 सेकंड में दोबारा बैक दबाएँ','warn',null,null,2000);
-}
-window.addEventListener('popstate',handleBack);
-document.addEventListener('backbutton',function(e){e.preventDefault();handleBack();},false);
-try{history.replaceState({sk:0},'');pushTrap();}catch(e){}
+        function getMostVisible() {
+            let best = null, bestScore = -Infinity;
+            const vh = window.innerHeight;
+            document.querySelectorAll('.video-wrapper').forEach(w => {
+                const r = w.getBoundingClientRect();
+                const visTop = Math.max(r.top, 0), visBot = Math.min(r.bottom, vh);
+                const visH = visBot - visTop;
+                if (visH <= 0 || r.height <= 0) return;
+                const ratio = visH / r.height;
+                if (ratio < PLAY_THRESHOLD) return;
+                const centerDist = Math.abs((visTop + visBot) / 2 - vh / 2);
+                const score = ratio * 2000 - centerDist;
+                if (score > bestScore) { bestScore = score; best = w.getAttribute('data-video-id'); }
+            });
+            return best;
+        }
 
-function posterBg(id){var h=0;for(var i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;var pairs=[['#ff2e7e','#8b5cf6'],['#ff9f1c','#ff5e00'],['#22e4ff','#4cc9f0'],['#7cff6b','#22e4ff'],['#ffd166','#ff2e7e'],['#8b5cf6','#22e4ff']];var p=pairs[h%pairs.length];return 'linear-gradient(140deg,'+p[0]+'33,'+p[1]+'55),radial-gradient(circle at 30% 20%,'+p[0]+'22,transparent 60%),#12081f';}
-function videoItemHTML(v,i,savedVariant){
-  var letter=esc((v.userId||'?').replace('@','').charAt(0).toUpperCase());
-  var isF=!!follows[v.userId];var own=v.userId==='@'+handle();
-  var saveBtn=savedVariant?'<button class="rail unsave" data-act="unsave" data-id="'+v.id+'"><i class="fas fa-bookmark"></i><span>हटाएँ</span></button>':'<button class="rail '+(v.isSaved?'saved':'')+'" data-act="save" data-id="'+v.id+'"><i class="fas fa-bookmark"></i><span>सेव</span></button>';
-  var cmCount=(v.comments||0)+((comments[v.id]||[]).length);
-  return '<article class="v-item" data-id="'+v.id+'" data-index="'+i+'" data-src="'+esc(v.videoUrl)+'">'
-   +'<div class="v-poster" style="background:'+posterBg(v.id)+'"><i class="fas fa-clapperboard"></i><b>'+esc(v.title)+'</b><span>'+esc(v.userId)+'</span></div>'
-   +'<video loop playsinline webkit-playsinline preload="none" controlsList="nodownload nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback oncontextmenu="return false"></video>'
-   +'<div class="v-shade top"></div><div class="v-shade bottom"></div><div class="v-tap" data-act="tap"></div>'
-   +'<div class="v-pause"><i class="fas fa-play"></i></div>'
-   +'<div class="v-buffer"><div class="ring"></div><span>बफ़र हो रहा है…</span></div>'
-   +'<div class="v-hearts"></div>'
-   +'<button class="v-soundpill" data-act="unmute"><i class="fas fa-volume-xmark"></i> आवाज़ चालू करें</button>'
-   +'<div class="v-side"><button class="v-ava" data-act="detail" data-id="'+v.id+'">'+letter+'</button>'
-   +'<button class="rail '+(v.isLiked?'liked':'')+'" data-act="like" data-id="'+v.id+'"><i class="fas fa-heart"></i><span>'+v.likes+'</span></button>'
-   +'<button class="rail" data-act="comments" data-id="'+v.id+'"><i class="fas fa-comment-dots"></i><span>'+cmCount+'</span></button>'
-   +'<button class="rail" data-act="share" data-id="'+v.id+'"><i class="fas fa-share"></i><span>'+v.shares+'</span></button>'
-   +saveBtn+'<div class="disc"><i class="fas fa-music"></i></div></div>'
-   +'<div class="v-meta" data-act="detail" data-id="'+v.id+'"><div class="v-user"><b>'+esc(v.userId)+'</b>'+(own?'':'<button class="followchip '+(isF?'on':'')+'" data-act="follow" data-userid="'+esc(v.userId)+'">'+(isF?'<i class="fas fa-check"></i> Following':'<i class="fas fa-plus"></i> Follow')+'</button>')+'</div>'
-   +'<div class="v-title">'+esc(v.title)+'</div><div class="v-music"><i class="fas fa-music"></i><span>ओरिजिनल साउंड · '+esc(v.userId)+'</span></div></div>'
-   +'<div class="v-progress" data-act="seek"><i class="v-buff"></i><i class="v-played"></i></div></article>';
-}
-function renderFeed(){
-  var f=$('feed');
-  if(!videos.length){f.innerHTML='<div class="empty"><i class="fas fa-video-slash"></i><p>अभी कोई वीडियो नहीं है।<br>पहला वीडियो आप अपलोड करें!</p><button data-act="open-upload"><i class="fas fa-plus"></i> अपलोड करें</button></div>';return;}
-  if(activeIndex>=videos.length)activeIndex=0;
-  f.innerHTML=videos.map(function(v,i){return videoItemHTML(v,i,false);}).join('');
-  wireVideos(f);applyWindow();attachFeedObserver();applyMuted();startWatchdog();
-}
-function bufferedEnd(v){try{for(var i=0;i<v.buffered.length;i++){if(v.buffered.start(i)<=v.currentTime&&v.currentTime<=v.buffered.end(i))return v.buffered.end(i);}return v.buffered.length?v.buffered.end(v.buffered.length-1):0;}catch(e){return 0;}}
-function updateBars(v){var item=v.closest('.v-item');if(!item)return;var played=item.querySelector('.v-played'),buff=item.querySelector('.v-buff');
-  if(played&&v.duration)played.style.width=(v.currentTime/v.duration*100)+'%';
-  if(buff&&v.duration)buff.style.width=Math.min(100,bufferedEnd(v)/v.duration*100)+'%';}
-function wireVideos(root){
-  var vids=root.querySelectorAll('video');
-  for(var i=0;i<vids.length;i++){(function(v){
-    v.muted=prefs.muted;
-    v.addEventListener('loadeddata',function(){var p=v.closest('.v-item').querySelector('.v-poster');if(p)p.style.display='none';});
-    v.addEventListener('waiting',function(){v.closest('.v-item').classList.add('buffering');});
-    v.addEventListener('stalled',function(){v.closest('.v-item').classList.add('buffering');});
-    v.addEventListener('playing',function(){var it=v.closest('.v-item');it.classList.remove('buffering');if(it.classList.contains('active'))document.body.classList.add('playing');});
-    v.addEventListener('pause',function(){document.body.classList.remove('playing');});
-    v.addEventListener('canplay',function(){var it=v.closest('.v-item');it.classList.remove('buffering');if(it.classList.contains('active')&&prefs.autoplay&&!anySheetOpen()&&v.paused)v.play().catch(function(){});});
-    v.addEventListener('progress',function(){updateBars(v);});
-    v.addEventListener('timeupdate',function(){updateBars(v);});
-  })(vids[i]);}
-}
-function feedItems(){return Array.prototype.slice.call(document.querySelectorAll('#feed .v-item'));}
-function applyWindow(){
-  var els=feedItems(),w=prefs.window;
-  for(var i=0;i<els.length;i++){var item=els[i],video=item.querySelector('video'),url=item.dataset.src;
-    if(Math.abs(i-activeIndex)<=w){
-      video.preload=(i>=activeIndex&&i<=activeIndex+2)?'auto':'metadata';
-      if(video.getAttribute('src')!==url){video.src=url;video.load();}
-    }else{
-      if(video.getAttribute('src')){video.pause();video.removeAttribute('src');video.load();}
-      var p=item.querySelector('.v-poster');if(p)p.style.display='flex';
-      item.classList.remove('buffering');
-    }
-  }
-}
-function attachFeedObserver(){
-  if(feedObs)feedObs.disconnect();
-  feedObs=new IntersectionObserver(function(es){es.forEach(function(en){var item=en.target,vid=item.querySelector('video');if(!vid)return;
-    if(en.isIntersecting&&en.intersectionRatio>=0.6){
-      activeIndex=parseInt(item.dataset.index,10)||0;
-      var all=feedItems();for(var j=0;j<all.length;j++)all[j].classList.toggle('active',all[j]===item);
-      applyWindow();
-      if(prefs.autoplay&&!anySheetOpen()&&!$('feed').classList.contains('hide'))vid.play().catch(function(){item.querySelector('.v-pause').classList.add('on');});
-      bumpView(item.dataset.id);
-    }else{item.classList.remove('active');vid.pause();}});},{root:$('feed'),threshold:[0,0.6,1]});
-  var items=feedItems();for(var i=0;i<items.length;i++)feedObs.observe(items[i]);
-}
-function startWatchdog(){
-  if(watchdog)clearInterval(watchdog);
-  lastCur=0;lastAdvance=Date.now();stallCount=0;
-  watchdog=setInterval(function(){
-    var els=feedItems();var it=els[activeIndex];if(!it)return;var v=it.querySelector('video');if(!v||v.paused)return;
-    if(v.currentTime!==lastCur){lastCur=v.currentTime;lastAdvance=Date.now();stallCount=0;}
-    else if(Date.now()-lastAdvance>2500){it.classList.add('buffering');stallCount++;
-      if(stallCount>=2&&prefs.window<3&&!raisedWindow){raisedWindow=true;prefs.window=3;saveJSON('sk_prefs',prefs);applyWindow();showToast('नेट धीमा लगा — प्रीलोड बढ़ाया गया','info');}
-    }
-  },1200);
-}
-function bumpView(id){if(viewed[id])return;viewed[id]=1;var v=findVideo(id);if(!v)return;v.views=(v.views||0)+1;viewQueue[id]=1;}
-function flushViews(){var ids=Object.keys(viewQueue);viewQueue={};for(var i=0;i<ids.length;i++){(function(id){var v=findVideo(id);if(v)apiUpdateVideo(id,{views:v.views}).catch(function(){});})(ids[i]);}}
-setInterval(flushViews,12000);
-window.addEventListener('pagehide',flushViews);
-function spawnHearts(item,x,y){var host=item.querySelector('.v-hearts');if(!host)return;for(var i=0;i<6;i++){var h=document.createElement('i');h.className='fas fa-heart heart-pop';h.style.left=x+'px';h.style.top=y+'px';h.style.setProperty('--dx',(Math.random()*120-60)+'px');h.style.setProperty('--dy',(-60-Math.random()*90)+'px');h.style.fontSize=(18+Math.random()*20)+'px';host.appendChild(h);(function(el){setTimeout(function(){el.remove();},900);})(h);}}
-function findVideo(id){return videos.find(function(x){return x.id===id;});}
-function togglePlay(item){var v=item.querySelector('video'),ic=item.querySelector('.v-pause');if(!v)return;
-  if(v.paused){v.play().catch(function(){});ic.className='v-pause';ic.innerHTML='<i class="fas fa-play"></i>';}
-  else{v.pause();ic.className='v-pause on';ic.innerHTML='<i class="fas fa-pause"></i>';setTimeout(function(){ic.classList.remove('on');},600);}}
-async function doLike(id,fromDouble){
-  var v=findVideo(id);if(!v)return;var was=v.isLiked;v.isLiked=!was;v.likes=Math.max(0,(v.likes||0)+(v.isLiked?1:-1));
-  localLikes[id]=v.isLiked;saveJSON('sk_likes',localLikes);refreshRail(id);
-  if(fromDouble&&navigator.vibrate)navigator.vibrate(20);
-  try{await apiUpdateVideo(id,{isLiked:v.isLiked,likes:v.likes});}catch(e){v.isLiked=was;v.likes=Math.max(0,(v.likes||0)+(was?1:-1));localLikes[id]=was;saveJSON('sk_likes',localLikes);refreshRail(id);showToast('Like सेव नहीं हुआ','error');}
-}
-function refreshRail(id){var v=findVideo(id);if(!v)return;var nodes=document.querySelectorAll('.v-item[data-id="'+id+'"]');
-  for(var i=0;i<nodes.length;i++){var n=nodes[i];
-    var like=n.querySelector('[data-act="like"]');if(like){like.classList.toggle('liked',v.isLiked);like.querySelector('span').textContent=v.likes;}
-    var save=n.querySelector('[data-act="save"]');if(save)save.classList.toggle('saved',v.isSaved);
-    var cm=n.querySelector('[data-act="comments"]');if(cm)cm.querySelector('span').textContent=(v.comments||0)+((comments[id]||[]).length);
-    var sh=n.querySelector('[data-act="share"]');if(sh)sh.querySelector('span').textContent=v.shares;}}
-async function doSave(id){var v=findVideo(id);if(!v)return;var was=v.isSaved;v.isSaved=!was;refreshRail(id);showToast(v.isSaved?'वीडियो सेव हो गया':'सेव से हटाया','success');
-  try{await apiUpdateVideo(id,{isSaved:v.isSaved});}catch(e){v.isSaved=was;refreshRail(id);showToast('Save सेव नहीं हुआ','error');}}
-async function doUnsave(id){var v=findVideo(id);if(!v)return;v.isSaved=false;
-  var item=document.querySelector('#savedList .v-item[data-id="'+id+'"]');if(item){var vd=item.querySelector('video');if(vd)vd.pause();item.remove();}
-  $('savedCount').textContent=document.querySelectorAll('#savedList .v-item').length;refreshRail(id);
-  try{await apiUpdateVideo(id,{isSaved:false});}catch(e){}
-  if(!document.querySelectorAll('#savedList .v-item').length)renderSaved();}
-function doFollow(userId){if(userId==='@'+handle()){showToast('आप खुद को follow नहीं कर सकते','warn');return;}
-  var on=!!follows[userId];if(on)delete follows[userId];else follows[userId]=true;saveJSON('sk_follows',follows);
-  var chips=document.querySelectorAll('[data-act="follow"][data-userid="'+userId+'"]');
-  for(var i=0;i<chips.length;i++){chips[i].classList.toggle('on',!on);chips[i].innerHTML=!on?'<i class="fas fa-check"></i> Following':'<i class="fas fa-plus"></i> Follow';}
-  showToast(!on?(userId+' को follow किया ✓'):(userId+' को unfollow किया'),'success');}
-async function doShare(id){var v=findVideo(id);if(!v)return;var url=v.videoUrl;
-  try{if(navigator.share){await navigator.share({title:v.title,text:v.title,url:url});}
-    else if(navigator.clipboard){await navigator.clipboard.writeText(url);showToast('लिंक कॉपी हो गया','success');}
-    else showToast(url,'info');
-    v.shares=(v.shares||0)+1;refreshRail(id);apiUpdateVideo(id,{shares:v.shares}).catch(function(){});}
-  catch(e){if(e&&e.name==='AbortError')return;}}
-function doSeek(el,e){var item=el.closest('.v-item');var v=item.querySelector('video');if(!v||!v.duration)return;var r=el.getBoundingClientRect();var ratio=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));v.currentTime=ratio*v.duration;}
+        function scheduleSync(delay) {
+            clearTimeout(syncTimer);
+            syncTimer = setTimeout(syncPlayback, delay || 150);
+        }
 
-function openComments(id){currentCommentsId=id;var v=findVideo(id);$('cmTitle').textContent='कमेंट्स · '+(v?v.userId:'');renderComments();openSheet('commentsSheet');}
-function renderComments(){var list=comments[currentCommentsId]||[];
-  if(!list.length){$('cmList').innerHTML='<div class="empty" style="height:auto;padding:20px"><i class="fas fa-comment-slash"></i><p>अभी कोई कमेंट नहीं। पहला कमेंट आप करें!</p></div>';return;}
-  $('cmList').innerHTML=list.map(function(c){return '<div class="cm"><div class="ava">'+esc((c.user||'?').replace('@','').charAt(0).toUpperCase())+'</div><div class="body"><b>'+esc(c.user)+'</b>'+esc(c.text)+'</div></div>';}).join('');}
-function sendComment(){var txt=$('cmInput').value.trim();if(!txt||!currentCommentsId)return;
-  if(!comments[currentCommentsId])comments[currentCommentsId]=[];
-  comments[currentCommentsId].push({user:'@'+handle(),text:txt,ts:Date.now()});saveJSON('sk_comments',comments);
-  $('cmInput').value='';renderComments();refreshRail(currentCommentsId);}
+        function syncPlayback() {
+            if (isOrientationChanging) return;
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) return;
+            if (!isYtReady) return;
 
-function openDetail(id){var v=findVideo(id);if(!v)return;var own=v.uploadedBy===activeId();var when=new Date(tsNum(v.timestamp)).toLocaleString('hi-IN');
-  $('dtBody').innerHTML='<div class="dt-title">'+esc(v.title)+'</div><div class="upmeta">'+esc(v.userId)+' · '+esc(when)+'</div>'
-   +'<div class="dt-stats"><div class="dt-stat"><b>'+v.views+'</b><span>व्यूज़</span></div><div class="dt-stat"><b>'+v.likes+'</b><span>लाइक्स</span></div><div class="dt-stat"><b>'+v.shares+'</b><span>शेयर</span></div><div class="dt-stat"><b>'+(v.isSaved?'हाँ':'नहीं')+'</b><span>सेव</span></div></div>'
-   +'<div class="btnrow"><button class="btn ghost" data-act="save" data-id="'+v.id+'"><i class="fas fa-bookmark"></i> '+(v.isSaved?'अनसेव':'सेव')+'</button><button class="btn ghost" data-act="share" data-id="'+v.id+'"><i class="fas fa-share"></i> शेयर</button></div>'
-   +(own?'<div class="btnrow"><button class="btn ghost" data-act="edit-video" data-id="'+v.id+'"><i class="fas fa-pen"></i> एडिट</button><button class="btn danger" data-act="delete-video" data-id="'+v.id+'"><i class="fas fa-trash"></i> डिलीट</button></div>':'');
-  openSheet('detailSheet');}
+            let best = getMostVisible();
+            if (manualLock && getVideoRatio(manualLock) >= 0.3) best = manualLock;
 
-function goHome(){setNav('navHome');$('savedView').classList.remove('on');$('profileView').classList.remove('on');$('feed').classList.remove('hide');if(savedObs){savedObs.disconnect();savedObs=null;}resumeActive();}
-function renderSaved(){var list=videos.filter(function(v){return v.isSaved;});$('savedCount').textContent=list.length;var c=$('savedList');
-  if(!list.length){c.innerHTML='<div class="empty"><i class="fas fa-bookmark"></i><p>आपने अभी कोई वीडियो सेव नहीं किया।</p><button data-act="go-home">वीडियो देखें</button></div>';return;}
-  c.innerHTML=list.map(function(v,i){return videoItemHTML(v,i,true);}).join('');wireVideos(c);
-  var items=c.querySelectorAll('.v-item');for(var i=0;i<items.length;i++){var vd=items[i].querySelector('video');vd.preload='auto';vd.src=items[i].dataset.src;vd.load();}
-  if(savedObs)savedObs.disconnect();
-  savedObs=new IntersectionObserver(function(es){es.forEach(function(en){var it=en.target,v=it.querySelector('video');if(!v)return;
-    if(en.isIntersecting&&en.intersectionRatio>=0.6){it.classList.add('active');if(prefs.autoplay&&!anySheetOpen())v.play().catch(function(){});}
-    else{it.classList.remove('active');v.pause();}});},{root:c,threshold:[0,0.6]});
-  for(var j=0;j<items.length;j++)savedObs.observe(items[j]);applyMuted();}
-function showSaved(){setNav('navSaved');lastRootBack=0;pauseAll();$('feed').classList.add('hide');$('profileView').classList.remove('on');$('savedView').classList.add('on');renderSaved();}
-function showProfile(){setNav('navUser');lastRootBack=0;pauseAll();$('feed').classList.add('hide');$('savedView').classList.remove('on');$('profileView').classList.add('on');renderProfile();}
+            if (!best) { if (visibleVideoId) pauseAllVideos(); return; }
+            if (visibleVideoId === best) return;
 
-function renderProfile(){
-  var own=videos.filter(function(v){return v.uploadedBy===activeId();});
-  var totViews=own.reduce(function(s,v){return s+(v.views||0);},0);
-  var totLikes=own.reduce(function(s,v){return s+(v.likes||0);},0);
-  var fCount=Object.keys(follows).length;var isGuest=!session;
-  $('profileContent').innerHTML=
-   '<div class="p-head"><div class="p-ava">'+esc(handle().charAt(0).toUpperCase())+'</div><div class="p-name">'+esc(handle())+(isGuest?'<span class="guesttag">GUEST</span>':'')+'</div><div class="p-mail">'+(isGuest?'Guest Mode — बिना Login':esc(session.email||''))+'</div>'+(isGuest?'<button class="p-cta" data-act="open-auth"><i class="fas fa-right-to-bracket"></i> Login / Signup (Optional)</button>':'')+'<div class="p-stats"><div class="p-stat"><b>'+own.length+'</b><span>वीडियो</span></div><div class="p-stat"><b>'+totViews+'</b><span>व्यूज़</span></div><div class="p-stat"><b>'+totLikes+'</b><span>लाइक्स</span></div><div class="p-stat"><b>'+fCount+'</b><span>Following</span></div></div></div>'
-   +'<div class="ptabs"><button class="ptab on" data-ptab="videos">वीडियो</button><button class="ptab" data-ptab="following">Following</button><button class="ptab" data-ptab="settings">सेटिंग्स</button><button class="ptab" data-ptab="money">कमाई</button><button class="ptab" data-ptab="account">'+(isGuest?'Login':'Logout')+'</button></div>'
-   +'<div class="ppanel on" id="panel-videos"><div class="sortrow"><span>क्रम:</span><select id="pSort"><option value="new">नए पहले</option><option value="views">ज़्यादा व्यूज़</option><option value="likes">ज़्यादा लाइक्स</option></select></div><div id="pVideoList"></div></div>'
-   +'<div class="ppanel" id="panel-following"><div id="pFollowList"></div></div>'
-   +'<div class="ppanel" id="panel-settings"><div class="setcard"><h4><i class="fas fa-palette"></i> थीम रंग</h4><div class="accents"><button class="acc rani" data-accent="rani" aria-label="Rani"></button><button class="acc saffron" data-accent="saffron" aria-label="Saffron"></button><button class="acc cyan" data-accent="cyan" aria-label="Cyan"></button></div></div>'
-   +'<div class="setcard"><h4><i class="fas fa-gauge-high"></i> प्लेबैक / परफ़ॉर्मेंस</h4><div class="setrow"><span>ऑटोप्ले</span><button class="switch" id="setAutoplay" role="switch" aria-checked="'+prefs.autoplay+'"></button></div><div class="setrow"><span>परफ़ॉर्मेंस मोड (हल्का UI)</span><button class="switch" id="setPerf" role="switch" aria-checked="'+prefs.perf+'"></button></div><div class="setrow"><span>प्रीलोड विंडो</span><select id="setWindow"><option value="1">1 (कम डेटा)</option><option value="2">2 (संतुलित)</option><option value="3">3 (स्मूथ)</option></select></div><div class="setrow"><span>डेटा सेवर</span><button class="switch" id="setSaver" role="switch" aria-checked="'+prefs.saver+'"></button></div><div class="setrow"><span>आवाज़</span><button class="switch" id="setSound" role="switch" aria-checked="'+(!prefs.muted)+'"></button></div><div class="setrow"><span>कम मोशन</span><button class="switch" id="setMotion" role="switch" aria-checked="'+prefs.motion+'"></button></div></div>'
-   +'<div class="setcard"><h4><i class="fas fa-broom"></i> डेटा</h4><button class="btn danger" id="setReset" style="width:100%">लोकल डेटा रीसेट करें</button></div></div>'
-   +'<div class="ppanel" id="panel-money"><div class="money"><h4><i class="fas fa-users"></i> फ़ॉलोअर्स (अनुमानित)</h4><div class="mlabel"><span>'+Math.floor(totViews/10)+'</span><span>लक्ष्य 2,000</span></div><div class="mbar"><i style="width:'+Math.min(100,(totViews/10)/2000*100)+'%"></i></div></div><div class="money"><h4><i class="fas fa-eye"></i> व्यूज़</h4><div class="mlabel"><span>'+totViews.toLocaleString('hi-IN')+'</span><span>लक्ष्य 10,00,000</span></div><div class="mbar"><i style="width:'+Math.min(100,totViews/1000000*100)+'%"></i></div></div><div class="money"><h4><i class="fas fa-clock"></i> वॉच टाइम (घंटे)</h4><div class="mlabel"><span>'+Math.floor(totViews*0.05)+'</span><span>लक्ष्य 1,500</span></div><div class="mbar"><i style="width:'+Math.min(100,(totViews*0.05)/1500*100)+'%"></i></div></div></div>'
-   +'<div class="ppanel" id="panel-account"></div>';
-  var tabs=document.querySelectorAll('.ptab');
-  for(var i=0;i<tabs.length;i++){(function(tab){tab.addEventListener('click',function(){var name=tab.dataset.ptab;
-    if(name==='account'){if(session){openConfirm('Logout करें?','Guest Mode में भी अपलोड कर सकते हैं।',function(){session=null;saveJSON('sk_user',null);goHome();showToast('Logout हो गया','success');});}else openAuth();return;}
-    var all=document.querySelectorAll('.ptab');for(var j=0;j<all.length;j++)all[j].classList.remove('on');tab.classList.add('on');
-    var panels=document.querySelectorAll('.ppanel');for(var j2=0;j2<panels.length;j2++)panels[j2].classList.remove('on');
-    $('panel-'+name).classList.add('on');
-    if(name==='videos')renderProfileVideos();if(name==='following')renderProfileFollowing();});})(tabs[i]);}
-  $('pSort').addEventListener('change',renderProfileVideos);
-  var accs=document.querySelectorAll('.acc');for(var a=0;a<accs.length;a++){(function(btn){btn.classList.toggle('on',btn.dataset.accent===prefs.accent);btn.addEventListener('click',function(){prefs.accent=btn.dataset.accent;saveJSON('sk_prefs',prefs);applyPrefs();var l=document.querySelectorAll('.acc');for(var x=0;x<l.length;x++)l[x].classList.toggle('on',l[x].dataset.accent===prefs.accent);});})(accs[a]);}
-  bindSwitch('setAutoplay','autoplay');bindSwitch('setSaver','saver');bindSwitch('setMotion','motion');bindSwitch('setPerf','perf');
-  $('setWindow').value=String(prefs.window);
-  $('setWindow').addEventListener('change',function(){prefs.window=parseInt(this.value,10)||2;saveJSON('sk_prefs',prefs);raisedWindow=false;applyWindow();showToast('प्रीलोड विंडो: '+prefs.window,'info');});
-  $('setSound').addEventListener('click',function(){prefs.muted=!prefs.muted;saveJSON('sk_prefs',prefs);applyPrefs();$('setSound').setAttribute('aria-checked',String(!prefs.muted));});
-  $('setReset').addEventListener('click',function(){openConfirm('लोकल डेटा रीसेट?','सेव/कमेंट/डेमो वीडियो हट जाएंगे।',function(){['sk_user','sk_follows','sk_comments','sk_demo_videos','sk_demo_users','sk_prefs','sk_likes','sk_files','sk_seeded'].forEach(function(k){localStorage.removeItem(k);});location.reload();});});
-  renderProfileVideos();
-}
-function bindSwitch(id,key){$(id).addEventListener('click',function(){prefs[key]=!prefs[key];saveJSON('sk_prefs',prefs);applyPrefs();$(id).setAttribute('aria-checked',String(prefs[key]));if(key==='perf')showToast(prefs.perf?'परफ़ॉर्मेंस मोड चालू':'परफ़ॉर्मेंस मोड बंद','info');});}
-function renderProfileVideos(){
-  var own=videos.filter(function(v){return v.uploadedBy===activeId();});var s=$('pSort').value;
-  own.sort(function(a,b){if(s==='views')return (b.views||0)-(a.views||0);if(s==='likes')return (b.likes||0)-(a.likes||0);return tsNum(b.timestamp)-tsNum(a.timestamp);});
-  if(!own.length){$('pVideoList').innerHTML='<div class="empty" style="height:auto;padding:24px"><i class="fas fa-video-slash"></i><p>आपने अभी कोई वीडियो अपलोड नहीं किया।</p></div>';return;}
-  $('pVideoList').innerHTML=own.map(function(v){return '<div class="vrow"><video src="'+esc(v.videoUrl)+'" muted preload="metadata"></video><div class="info"><b>'+esc(v.title)+'</b><span><i class="fas fa-eye"></i> '+v.views+' · <i class="fas fa-heart"></i> '+v.likes+'</span></div><div class="acts"><button class="iconbtn" data-act="edit-video" data-id="'+v.id+'"><i class="fas fa-pen"></i></button><button class="iconbtn del" data-act="delete-video" data-id="'+v.id+'"><i class="fas fa-trash"></i></button></div></div>';}).join('');
-}
-function renderProfileFollowing(){var keys=Object.keys(follows);
-  if(!keys.length){$('pFollowList').innerHTML='<div class="empty" style="height:auto;padding:24px"><i class="fas fa-user-slash"></i><p>आपने अभी किसी को follow नहीं किया।</p></div>';return;}
-  $('pFollowList').innerHTML=keys.map(function(u){return '<div class="vrow"><div class="v-ava" style="width:44px;height:44px;font-size:17px">'+esc(u.replace('@','').charAt(0).toUpperCase())+'</div><div class="info"><b>'+esc(u)+'</b><span>Following</span></div><div class="acts"><button class="iconbtn del" data-act="unfollow" data-userid="'+esc(u)+'"><i class="fas fa-user-minus"></i></button></div></div>';}).join('');}
+            pauseAllVideos();
+            ensurePlayer(best);
+            if (playerReady[best]) tryPlay(best);
+            else pendingPlay[best] = true;
+        }
 
-function openEdit(id){var v=findVideo(id);if(!v)return;currentEditId=id;$('edTitle').value=v.title;openSheet('editSheet');}
-function saveEdit(){var v=findVideo(currentEditId);if(!v)return;var nt=$('edTitle').value.trim();if(!nt){showToast('टाइटल खाली नहीं हो सकता','warn');return;}
-  var old=v.title;v.title=nt;closeSheet('editSheet');renderFeed();if($('profileView').classList.contains('on'))renderProfileVideos();
-  apiUpdateVideo(v.id,{title:nt}).then(function(){showToast('टाइटल अपडेट हो गया','success');}).catch(function(){v.title=old;renderFeed();showToast('अपडेट नहीं हुआ','error');});}
-function deleteVideo(id){var v=findVideo(id);if(!v)return;
-  openConfirm('वीडियो डिलीट करें?','"'+v.title+'" हट जाएगा। 6 सेकंड तक वापस ला सकते हैं।',function(){
-    var idx=videos.indexOf(v);videos.splice(idx,1);renderFeed();if($('profileView').classList.contains('on'))renderProfileVideos();
-    showToast('वीडियो हटाया','warn','वापस लाएँ',function(){clearTimeout(deleteTimers[id]);delete deleteTimers[id];videos.splice(Math.min(idx,videos.length),0,v);renderFeed();showToast('वीडियो वापस आ गया','success');},6000);
-    deleteTimers[id]=setTimeout(function(){delete deleteTimers[id];apiDeleteVideo(id).catch(function(){videos.splice(Math.min(idx,videos.length),0,v);renderFeed();showToast('डिलीट नहीं हुआ, वापस जोड़ा','error');});},6000);});}
+        function onFirstGesture() {
+            if (userGestureDone) return;
+            userGestureDone = true;
+            document.removeEventListener('touchend', onFirstGesture, true);
+            document.removeEventListener('click', onFirstGesture, true);
+            document.removeEventListener('keydown', onFirstGesture, true);
+            scheduleSync(0);
+        }
+        document.addEventListener('touchend', onFirstGesture, { capture: true, passive: true });
+        document.addEventListener('click', onFirstGesture, { capture: true });
+        document.addEventListener('keydown', onFirstGesture, { capture: true });
 
-function startUpload(){if(uploading)return;$('fileInput').click();}
-function cleanupPending(){if(pendingURL){URL.revokeObjectURL(pendingURL);pendingURL=null;}pendingFile=null;$('fileInput').value='';}
-function onFile(e){var f=e.target.files&&e.target.files[0];if(!f)return;
-  if(f.type&&f.type.indexOf('video')!==0){showToast('कृपया वीडियो फ़ाइल चुनें','error');return;}
-  if(f.size>200*1024*1024){showToast('फ़ाइल 200MB से छोटी चुनें','error');return;}
-  if(f.size>60*1024*1024)showToast('बड़ी फ़ाइल — प्लेबैक में बफ़र हो सकता है','warn');
-  pendingFile=f;pendingURL=URL.createObjectURL(f);
-  $('upPreview').src=pendingURL;$('upPreview').play().catch(function(){});
-  $('upName').textContent=f.name;$('upMeta').textContent=(f.size/1048576).toFixed(1)+' MB · '+(mode==='cloud'?'Cloud पर अपलोड होगा':'डेमो: इसी डिवाइस पर सेव होगा');
-  $('upTitle').value='';$('upCount').textContent='0 / 120';$('upBar').style.width='0%';$('upStage').textContent='';
-  $('upTags').innerHTML=['#trending','#desi','#viral','#funny','#travel'].map(function(t){return '<button class="tag" data-tag="'+t+'">'+t+'</button>';}).join('');
-  openSheet('uploadSheet');}
-async function doPublish(){
-  var title=$('upTitle').value.trim();
-  if(!title){showToast('टाइटल लिखें','warn');return;}
-  if(!pendingFile){showToast('कोई फ़ाइल नहीं चुनी','error');return;}
-  uploading=true;$('upPublish').disabled=true;$('upPublish').textContent='अपलोड हो रहा है…';$('upCancel').disabled=true;
-  $('upStage').textContent='फ़ाइल भेजी जा रही है…';$('upBar').style.width='8%';
-  try{
-    var up=await uploadFile(pendingFile,function(p){var pct=(p&&typeof p.progress==='number')?p.progress:0;$('upBar').style.width=(8+Math.round(pct*0.5))+'%';});
-    $('upBar').style.width='62%';$('upStage').textContent='जानकारी सेव हो रही है…';
-    var fields={type:'video',userId:'@'+handle(),username:handle(),title:title,videoUrl:up.url,fileId:up.fileId,uploadedBy:activeId(),likes:0,comments:0,views:0,shares:0,isLiked:false,isSaved:false,timestamp:Date.now()};
-    var created=await apiCreateVideo(fields);
-    if(mode==='cloud')videos.unshift(created);
-    activeIndex=0;
-    $('upBar').style.width='100%';$('upStage').textContent='हो गया!';
-    closeSheet('uploadSheet');cleanupPending();goHome();renderFeed();$('feed').scrollTop=0;
-    showToast('वीडियो अपलोड हो गया! 🎉','success');
-  }catch(err){$('upBar').style.width='0%';$('upStage').textContent='';showUploadError(err);}
-  finally{uploading=false;$('upPublish').disabled=false;$('upPublish').innerHTML='<i class="fas fa-paper-plane"></i> पब्लिश करें';$('upCancel').disabled=false;}
-}
-function showUploadError(err){var msg;
-  if(err&&err.skKind==='column')msg='DB में column "'+err.skInfo+'" नहीं है। Console → Table → Columns में बनाएँ (Required OFF)।';
-  else if(err&&err.skKind==='enum')msg='type column में यह value अनुमत नहीं। elements में video/user/follow जोड़ें।';
-  else if(err&&err.skKind==='invalid')msg='DB column type मेल नहीं खाता: '+err.skInfo;
-  else msg='अपलोड नहीं हुआ: '+((err&&err.message)||err);
-  $('dcBody').innerHTML='<div class="dc-line bad">'+esc(msg)+'</div>';openSheet('doctorSheet');showToast('अपलोड नहीं हुआ — जाँच देखें','error');}
+        window.onYouTubeIframeAPIReady = function() { 
+            isYtReady = true; 
+            setupIntersectionObserver();
+        };
 
-function openAuth(){authMode='login';updateAuthUI();openSheet('authSheet');}
-function updateAuthUI(){$('authTitle').textContent=authMode==='login'?'Login करें':'Signup करें';$('authSubmit').textContent=authMode==='login'?'Login':'Signup';$('authToggleText').textContent=authMode==='login'?'Account नहीं है?':'पहले से Account है?';$('authToggleLink').textContent=authMode==='login'?'Signup करें':'Login करें';}
-async function authSubmit(){
-  var u=$('authUser').value.trim(),e=$('authEmail').value.trim(),p=$('authPass').value.trim();
-  if(!u||!e||!p){showToast('सभी फ़ील्ड भरें','warn');return;}
-  $('authSubmit').disabled=true;
-  try{
-    if(authMode==='login'){var found=await apiFindUser(e,p);
-      if(!found){showToast('गलत Email या Password। पहले Signup करें या DB जाँच चलाएँ।','error');return;}
-      session=found;saveJSON('sk_user',session);await migrateGuest();closeSheet('authSheet');showToast('Login हो गया ✓','success');if($('profileView').classList.contains('on'))renderProfile();}
-    else{var created=await apiCreateUser({type:'user',userId:'@'+u,username:u,email:e,password:p,uploadedBy:'',timestamp:Date.now()});
-      session=created;saveJSON('sk_user',session);await migrateGuest();closeSheet('authSheet');showToast('Account बन गया! Guest वीडियो भी इसमें आ गए।','success');if($('profileView').classList.contains('on'))renderProfile();}
-  }catch(err){showToast('Login/Signup नहीं हुआ: '+((err&&err.message)||err),'error');openSheet('doctorSheet');runDoctor();}
-  finally{$('authSubmit').disabled=false;}
-}
-async function migrateGuest(){var gid=guestId;var mine=videos.filter(function(v){return v.uploadedBy===gid;});
-  for(var i=0;i<mine.length;i++){var v=mine[i];v.uploadedBy=activeId();v.userId='@'+handle();try{await apiUpdateVideo(v.id,{uploadedBy:v.uploadedBy,userId:v.userId});}catch(e){}}
-  if(mode==='demo')demoSave();renderFeed();}
+        /* ✅ नया: Player ready होने पर सारा custom overlay हटा दो */
+        function clearAllOverlays(videoId) {
+            const wrapper = document.getElementById('wrapper_' + videoId);
+            if (!wrapper) return;
+            
+            // Loader हटाओ
+            const loader = document.getElementById('loader_' + videoId);
+            if (loader) loader.classList.add('hidden');
+            
+            // Tap-play overlay हटाओ
+            const tapOverlay = wrapper.querySelector('.tap-play-overlay');
+            if (tapOverlay) tapOverlay.classList.add('hidden');
+            
+            // Side actions हटाओ (केवल portrait में थे)
+            const sideActions = wrapper.querySelector('.video-actions-side');
+            if (sideActions) sideActions.classList.add('hidden');
+            
+            // Video info overlay हटाओ (केवल portrait में था)
+            const overlay = wrapper.querySelector('.video-info-overlay');
+            if (overlay) overlay.classList.add('hidden');
+        }
 
-function dcLine(ok,text){return '<div class="dc-line '+(ok?'ok':'bad')+'">'+(ok?'✅ ':'❌ ')+esc(text)+'</div>';}
-async function runDoctor(){
-  var body=$('dcBody');body.innerHTML='<div class="dc-line">⏳ जाँच हो रही है…</div>';
-  if(mode==='demo'){body.innerHTML=dcLine(true,'डेमो मोड चालू — सब इसी डिवाइस पर सेव।')+dcLine(false,'Cloud से कनेक्ट नहीं। "Cloud से दोबारा जुड़ें" दबाएँ।');return;}
-  var html='';
-  try{await databases.listDocuments(DB,T,[Q.limit(1)]);html+=dcLine(true,'पढ़ना (Read) ठीक है।');}catch(e){html+=dcLine(false,'Read नहीं: '+e.message+' → Permissions में Any को Read दें।');}
-  try{var u=await smartCreate(baseRow({type:'user',userId:'@doctor',username:'doctor',email:'doctor@sabkuch.local',password:'x',timestamp:Date.now()}),['type','username','email','password']);await databases.deleteDocument(DB,T,u.$id);html+=dcLine(true,'Signup (user row) ठीक है।');}catch(e){html+=dcLine(false,'Signup नहीं: '+((e&&e.message)||e));}
-  try{var v=await smartCreate(baseRow({type:'video',userId:'@doctor',title:'जाँच वीडियो',videoUrl:'https://sabkuch.local/test.mp4',uploadedBy:'doctor',timestamp:Date.now()}),['type','userid','title','videourl','timestamp']);await databases.deleteDocument(DB,T,v.$id);html+=dcLine(true,'Upload (video row) ठीक है।');}catch(e){html+=dcLine(false,'Upload row नहीं: '+((e&&e.message)||e));}
-  var notes=[];var mk=Object.keys(schema.map);if(mk.length)notes.push('नाम अपने-आप मिलाए: '+mk.map(function(n){return n+' → '+schema.map[n];}).join(', '));
-  var ek=Object.keys(schema.extra);if(ek.length)notes.push('Required columns अपने-आप भरे: '+ek.join(', '));
-  var ak=Object.keys(schema.absent);if(ak.length)notes.push('गैर-मौजूद columns छोड़े (लोकल स्टेट): '+ak.join(', '));
-  if(schema.tsMode&&schema.tsMode!=='ms')notes.push('timestamp '+(schema.tsMode==='sec'?'seconds':'ISO')+' में सेव।');
-  if(notes.length)html+='<div class="dc-line ok">🔧 अपने-आप ढाला:\n'+esc(notes.join('\n'))+'</div>';
-  body.innerHTML=html;
-}
-async function retryCloud(){showToast('Cloud से जुड़ रहे हैं…','info');
-  try{var list=await cloudList();mode='cloud';videos=list;await seedCloudIfEmpty();updateBadge();renderFeed();closeSheet('doctorSheet');showToast('Cloud जुड़ गया ✓','success');}catch(e){showToast('Cloud नहीं जुड़ा: '+e.message,'error');}}
+        function ensurePlayer(videoId) {
+            if (!isYtReady || ytPlayers[videoId]) return;
+            const video = videos.find(v => v.id == videoId);
+            const div = document.getElementById('player_' + videoId);
+            if (!video || !div) return;
 
-function openSearch(){$('srInput').value='';renderSearch('');openSheet('searchSheet');setTimeout(function(){$('srInput').focus();},150);}
-function renderSearch(q){q=q.toLowerCase();var list=videos.filter(function(v){return !q||v.title.toLowerCase().indexOf(q)>=0||v.userId.toLowerCase().indexOf(q)>=0;});
-  if(!list.length){$('srResults').innerHTML='<div class="empty" style="height:auto;padding:20px"><i class="fas fa-magnifying-glass"></i><p>कोई वीडियो नहीं मिला।</p></div>';return;}
-  $('srResults').innerHTML=list.map(function(v){return '<button class="sr-item" data-act="jump" data-id="'+v.id+'"><video src="'+esc(v.videoUrl)+'" muted preload="metadata"></video><div><b>'+esc(v.userId)+'</b><span>'+esc(v.title)+'</span></div></button>';}).join('');}
-function jumpTo(id){closeSheet('searchSheet');goHome();var idx=videos.findIndex(function(x){return x.id===id;});if(idx>=0){activeIndex=idx;applyWindow();}var el=document.querySelector('#feed .v-item[data-id="'+id+'"]');if(el)el.scrollIntoView({behavior:'smooth'});}
+            try {
+                ytPlayers[videoId] = new YT.Player(div, { 
+                    videoId: video.youtubeId, 
+                    playerVars: { 
+                        'autoplay': 0, 'controls': 1, 'rel': 0, 
+                        'playsinline': 1, 'fs': 1, 'modestbranding': 1, 'iv_load_policy': 3
+                    },
+                    events: {
+                        'onReady': function() {
+                            playerReady[videoId] = true;
+                            // ✅ Player ready होते ही सारा overlay हटा दो
+                            clearAllOverlays(videoId);
+                            if (pendingPlay[videoId]) {
+                                pendingPlay[videoId] = false;
+                                if (getMostVisible() === videoId || manualLock === videoId) tryPlay(videoId);
+                            }
+                        },
+                        'onStateChange': function(event) {
+                            const st = event.data;
+                            const recentAttempt = Date.now() - (lastPlayAttempt[videoId] || 0) < 6000;
 
-document.addEventListener('click',function(e){
-  var closeEl=e.target.closest('[data-close]');if(closeEl){closeSheet(closeEl.dataset.close);return;}
-  var tagEl=e.target.closest('[data-tag]');if(tagEl){var t=$('upTitle');t.value=(t.value+' '+tagEl.dataset.tag).trim();$('upCount').textContent=t.value.length+' / 120';return;}
-  var el=e.target.closest('[data-act]');if(!el)return;
-  var act=el.dataset.act,id=el.dataset.id,uid=el.dataset.userid;
-  if(act==='tap'){var item=el.closest('.v-item');var now=Date.now();
-    if(now-lastTap<300&&lastTapItem===item){lastTap=0;var r=item.getBoundingClientRect();spawnHearts(item,e.clientX-r.left,e.clientY-r.top);var vv=findVideo(item.dataset.id);if(vv&&!vv.isLiked)doLike(item.dataset.id,true);var vd=item.querySelector('video');if(vd)vd.play().catch(function(){});}
-    else{lastTap=now;lastTapItem=item;togglePlay(item);}return;}
-  if(act==='seek'){doSeek(el,e);return;}
-  if(act==='like')doLike(id,false);
-  else if(act==='save')doSave(id);
-  else if(act==='unsave')doUnsave(id);
-  else if(act==='follow')doFollow(uid);
-  else if(act==='unfollow'){doFollow(uid);renderProfileFollowing();}
-  else if(act==='share')doShare(id);
-  else if(act==='comments')openComments(id);
-  else if(act==='detail')openDetail(id);
-  else if(act==='unmute'){if(prefs.muted){prefs.muted=false;saveJSON('sk_prefs',prefs);applyPrefs();showToast('आवाज़ चालू 🔊','success');}}
-  else if(act==='edit-video'){closeSheet('detailSheet');openEdit(id);}
-  else if(act==='delete-video'){closeSheet('detailSheet');deleteVideo(id);}
-  else if(act==='jump')jumpTo(id);
-  else if(act==='open-upload')startUpload();
-  else if(act==='open-auth')openAuth();
-  else if(act==='go-home')goHome();
-});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAllSheets();});
+                            if (st === YT.PlayerState.PLAYING) {
+                                hasPlayed[videoId] = true;
+                                clearTimeout(playWatchdog[videoId]);
+                            } else if (st === YT.PlayerState.BUFFERING) {
+                                // केवल तभी loader दिखाओ जब वीडियो पहले से चल रहा हो
+                                const loader = document.getElementById('loader_' + videoId);
+                                if (loader && visibleVideoId == videoId && hasPlayed[videoId]) {
+                                    loader.classList.remove('hidden');
+                                }
+                            } else if (st === YT.PlayerState.ENDED) {
+                                // वीडियो खत्म होने पर overlays वापस दिखाओ
+                                const wrapper = document.getElementById('wrapper_' + videoId);
+                                if (wrapper) {
+                                    const sideActions = wrapper.querySelector('.video-actions-side');
+                                    const overlay = wrapper.querySelector('.video-info-overlay');
+                                    if (sideActions) sideActions.classList.remove('hidden');
+                                    if (overlay) overlay.classList.remove('hidden');
+                                }
+                            }
+                        },
+                        'onError': function(event) {
+                            const loader = document.getElementById('loader_' + videoId);
+                            console.error(`YouTube Error for video ${videoId}:`, event.data);
+                            if (loader) {
+                                let errorMsg = '⚠️ वीडियो लोड नहीं हो सका';
+                                if (event.data === 2) errorMsg = '⚠️ गलत Video ID';
+                                else if (event.data === 5) errorMsg = '⚠️ HTML5 player error';
+                                else if (event.data === 100) errorMsg = '⚠️ वीडियो नहीं मिला';
+                                else if (event.data === 101 || event.data === 150) errorMsg = '⚠️ यह वीडियो embed नहीं हो सकता';
+                                loader.innerHTML = `<div style="color: #c62828; text-align: center; padding: 10px;">${errorMsg}<br><small>कृपया इंटरनेट जांचें या बाद में देखें</small></div>`;
+                                loader.classList.remove('hidden');
+                            }
+                        }
+                    }
+                }); 
+            } catch (e) {
+                console.error('Player init error:', e);
+            }
+        }
 
-$('navHome').onclick=goHome;$('navSaved').onclick=showSaved;$('navUser').onclick=showProfile;$('navSearch').onclick=openSearch;$('navUpload').onclick=startUpload;
-$('savedBack').onclick=goHome;$('profileBack').onclick=goHome;
-$('fileInput').addEventListener('change',onFile);
-$('upTitle').addEventListener('input',function(){$('upCount').textContent=this.value.length+' / 120';});
-$('upPublish').onclick=doPublish;$('upCancel').onclick=function(){closeSheet('uploadSheet');cleanupPending();};
-$('authSubmit').onclick=authSubmit;$('authToggleLink').onclick=function(){authMode=authMode==='login'?'signup':'login';updateAuthUI();};
-$('authCancel').onclick=function(){closeSheet('authSheet');};$('authDoctor').onclick=function(){openSheet('doctorSheet');runDoctor();};
-$('edSave').onclick=saveEdit;$('edCancel').onclick=function(){closeSheet('editSheet');};
-$('cmSend').onclick=sendComment;$('cmInput').addEventListener('keydown',function(e){if(e.key==='Enter')sendComment();});$('cmClose').onclick=function(){closeSheet('commentsSheet');};
-$('dtClose').onclick=function(){closeSheet('detailSheet');};
-$('dcRun').onclick=runDoctor;$('dcCloud').onclick=retryCloud;$('dcClose').onclick=function(){closeSheet('doctorSheet');};
-$('cfYes').onclick=function(){closeSheet('confirmSheet');if(confirmCb){var cb=confirmCb;confirmCb=null;cb();}};$('cfNo').onclick=function(){closeSheet('confirmSheet');confirmCb=null;};
-$('srClose').onclick=function(){closeSheet('searchSheet');};$('srInput').addEventListener('input',function(){renderSearch(this.value.trim());});
-$('modeBadge').onclick=function(){openSheet('doctorSheet');};
-$('soundBtn').onclick=function(){prefs.muted=!prefs.muted;saveJSON('sk_prefs',prefs);applyPrefs();showToast(prefs.muted?'आवाज़ बंद 🔇':'आवाज़ चालू 🔊','info');};
-$('exitReload').onclick=function(){location.reload();};
+        function tryPlay(videoId) {
+            const player = ytPlayers[videoId];
+            if (!player || !playerReady[videoId]) { pendingPlay[videoId] = true; return; }
+            const best = getMostVisible();
+            if (manualLock !== videoId && best !== videoId) { scheduleSync(0); return; }
+            visibleVideoId = videoId;
+            lastPlayAttempt[videoId] = Date.now();
+            try { player.playVideo(); } catch(e) {}
+            clearTimeout(playWatchdog[videoId]);
+            playWatchdog[videoId] = setTimeout(function() {
+                let st = -1;
+                try { st = player.getPlayerState(); } catch(e) {}
+                if (st !== YT.PlayerState.PLAYING) {
+                    // Autoplay block हो गया - tap overlay दिखाओ
+                    showTapToPlay(videoId);
+                }
+            }, 4000);
+        }
 
-(function(){var startY=0,pulling=false,refreshing=false,TH=80;var f=$('feed'),ind=$('refreshInd'),txt=$('refreshText');
-  f.addEventListener('touchstart',function(e){if(f.scrollTop===0&&!refreshing){startY=e.touches[0].clientY;pulling=true;}},{passive:true});
-  f.addEventListener('touchmove',function(e){if(!pulling||refreshing)return;var d=e.touches[0].clientY-startY;if(d>0){ind.classList.add('show');ind.style.transform='translateX(-50%) translateY('+(-70+d*0.8)+'px)';txt.textContent=d>=TH?'छोड़ें रिफ्रेश करने के लिए':'नीचे खींचें…';$('loadbar').style.width=Math.min(100,d/TH*100)+'%';}},{passive:true});
-  f.addEventListener('touchend',async function(e){if(!pulling||refreshing)return;pulling=false;var d=e.changedTouches[0].clientY-startY;
-    if(d>=TH){refreshing=true;ind.classList.add('spin');txt.textContent='रिफ्रेश हो रहा है…';$('loadbar').style.width='100%';flushViews();
-      try{if(mode==='cloud')videos=await cloudList();else videos=await demoLoad();activeIndex=0;renderFeed();}catch(err){}
-      setTimeout(function(){ind.classList.remove('show','spin');ind.style.transform='translateX(-50%) translateY(-70px)';$('loadbar').style.width='0%';refreshing=false;},600);}
-    else{ind.classList.remove('show');ind.style.transform='translateX(-50%) translateY(-70px)';$('loadbar').style.width='0%';}});})();
+        function showTapToPlay(videoId) {
+            const wrapper = document.getElementById('wrapper_' + videoId);
+            if (!wrapper) return;
+            let ov = wrapper.querySelector('.tap-play-overlay');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.className = 'tap-play-overlay';
+                ov.innerHTML = '<button class="tap-play-btn" aria-label="चलाएं">▶</button>';
+                ov.addEventListener('click', function() {
+                    manualLock = videoId;
+                    hideTapToPlay(videoId);
+                    lastPlayAttempt[videoId] = Date.now();
+                    pauseAllVideosKeepLock();
+                    try { ytPlayers[videoId].playVideo(); } catch(e) {}
+                    visibleVideoId = videoId;
+                    clearTimeout(playWatchdog[videoId]);
+                    playWatchdog[videoId] = setTimeout(function() {
+                        let st = -1; try { st = ytPlayers[videoId].getPlayerState(); } catch(e) {}
+                        if (st !== YT.PlayerState.PLAYING) {
+                            showTapToPlay(videoId);
+                        }
+                    }, 5000);
+                });
+                wrapper.appendChild(ov);
+            }
+        }
 
-function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},ms);})]);}
-async function init(){
-  var stored=loadJSON('sk_prefs',{});
-  prefs=Object.assign(prefs,stored);
-  if(stored.perf===undefined)prefs.perf=lowEnd;
-  if(stored.window===undefined)prefs.window=2;
-  session=loadJSON('sk_user',null);
-  guestId=loadJSON('sk_guest','');if(!guestId){guestId='guest_'+Math.random().toString(36).slice(2,8);saveJSON('sk_guest',guestId);}
-  follows=loadJSON('sk_follows',{});comments=loadJSON('sk_comments',{});
-  localLikes=loadJSON('sk_likes',{});localFiles=loadJSON('sk_files',{});
-  applyPrefs();updateBadge();
-  $('feed').innerHTML='<div class="skel"><div class="ring"></div><p style="color:var(--mut)">वीडियो लोड हो रहे हैं…</p></div>';
-  try{videos=await withTimeout(cloudList(),7000);mode='cloud';await seedCloudIfEmpty();}
-  catch(e){mode='demo';videos=await demoLoad();showToast('Cloud से कनेक्ट नहीं हुआ — डेमो मोड चालू। ऊपर बैज से जाँच करें।','warn',null,null,5000);}
-  updateBadge();renderFeed();
-}
-init();
-</script>
+        function hideTapToPlay(videoId) {
+            const wrapper = document.getElementById('wrapper_' + videoId);
+            if (!wrapper) return;
+            const ov = wrapper.querySelector('.tap-play-overlay');
+            if (ov) ov.classList.add('hidden');
+        }
+
+        function pauseAllVideosKeepLock() {
+            Object.keys(ytPlayers).forEach(key => {
+                if (key === manualLock) return;
+                const player = ytPlayers[key];
+                if (player && typeof player.pauseVideo === 'function') { try { player.pauseVideo(); } catch(e) {} }
+                clearTimeout(playWatchdog[key]);
+                hideTapToPlay(key);
+            });
+            Object.keys(pendingPlay).forEach(key => { if (key !== manualLock) delete pendingPlay[key]; });
+        }
+
+        function destroyPlayer(videoId) {
+            const p = ytPlayers[videoId];
+            if (!p) return;
+            clearTimeout(playWatchdog[videoId]);
+            delete playWatchdog[videoId];
+            delete pendingPlay[videoId];
+            delete hasPlayed[videoId];
+            delete lastPlayAttempt[videoId];
+            hideTapToPlay(videoId);
+            try { p.destroy(); } catch(e) {}
+            delete ytPlayers[videoId];
+            delete playerReady[videoId];
+            const wrapper = document.getElementById('wrapper_' + videoId);
+            if (wrapper && !document.getElementById('player_' + videoId)) {
+                const d = document.createElement('div');
+                d.id = 'player_' + videoId;
+                d.className = 'youtube-player-div';
+                wrapper.appendChild(d);
+            }
+            const loader = document.getElementById('loader_' + videoId);
+            if (loader) loader.classList.remove('hidden');
+        }
+
+        function resetAllPlayers() {
+            Object.keys(ytPlayers).forEach(key => {
+                clearTimeout(playWatchdog[key]);
+                if (ytPlayers[key] && typeof ytPlayers[key].destroy === 'function') {
+                    try { ytPlayers[key].destroy(); } catch(e) {}
+                }
+            });
+            ytPlayers = {}; playerReady = {}; pendingPlay = {}; playWatchdog = {};
+            hasPlayed = {}; lastPlayAttempt = {};
+            visibleVideoId = null; manualLock = null; clearTimeout(syncTimer);
+        }
+
+        var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        setTimeout(function() {
+            if (!isYtReady) showToast('⚠️ YouTube धीमा लोड हो रहा है, कुछ सेकंड रुकें');
+        }, 15000);
+        
+        function showToast(msg) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+        
+        function setPlayingState(isPlaying) { }
+        
+        function muteAdVideos() {
+            document.querySelectorAll('.ad-card video, .ad-card audio').forEach(media => {
+                if (!media.muted) { media.muted = true; media.volume = 0; media.setAttribute('muted', 'muted'); }
+            });
+            document.querySelectorAll('.ad-card iframe').forEach(iframe => {
+                if (!iframe.getAttribute('sandbox')) {
+                    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups');
+                }
+            });
+        }
+        
+        const adObserver = new MutationObserver(muteAdVideos);
+        adObserver.observe(document.body, { childList: true, subtree: true });
+        
+        function getActionsHTML(video, likeCount, isLiked, comments, isSaved) {
+            return `
+                <div class="video-actions-compact">
+                    <button class="action-btn-compact ${isLiked ? 'liked' : ''}" onclick="toggleLike(${video.id}, this, ${likeCount})"><span class="icon">${isLiked ? '❤️' : '🤍'}</span><span class="label">${likeCount}</span></button>
+                    <button class="action-btn-compact" onclick="toggleComments(${video.id})"><span class="icon">💬</span><span class="label">${comments.length}</span></button>
+                    <button class="action-btn-compact" onclick="openShare(${video.id})"><span class="icon share-icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span><span class="label">शेयर</span></button>
+                    <button class="action-btn-compact ${isSaved ? 'saved' : ''}" onclick="toggleSave(${video.id}, this)"><span class="icon">${isSaved ? '💾' : '🔖'}</span><span class="label">सेव</span></button>
+                    <button class="action-btn-compact" onclick="reportVideo(${video.id})"><span class="icon">🚩</span><span class="label">रिपोर्ट</span></button>
+                </div>
+            `;
+        }
+        
+        function getSideActionsHTML(video, likeCount, isLiked, comments, isSaved) {
+            return `
+                <div class="video-actions-side" id="sideActions_${video.id}">
+                    <button class="action-btn-compact ${isLiked ? 'liked' : ''}" onclick="toggleLike(${video.id}, this, ${likeCount})"><span class="icon">${isLiked ? '❤️' : '🤍'}</span><span class="label">${likeCount}</span></button>
+                    <button class="action-btn-compact" onclick="toggleComments(${video.id})"><span class="icon">💬</span><span class="label">${comments.length}</span></button>
+                    <button class="action-btn-compact" onclick="openShare(${video.id})"><span class="icon share-icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span><span class="label">शेयर</span></button>
+                    <button class="action-btn-compact ${isSaved ? 'saved' : ''}" onclick="toggleSave(${video.id}, this)"><span class="icon">${isSaved ? '💾' : '🔖'}</span><span class="label">सेव</span></button>
+                    <button class="action-btn-compact" onclick="reportVideo(${video.id})"><span class="icon">🚩</span><span class="label">रिपोर्ट</span></button>
+                </div>
+            `;
+        }
+
+        function buildCardHTML(video, likeCount, isLiked, comments, isSaved) {
+            const isPortrait = (video.aspectRatio === '9:16');
+            const ratioClass = isPortrait ? 'portrait' : '';
+            if (isPortrait) {
+                return `
+                    <div class="video-wrapper ${ratioClass}" id="wrapper_${video.id}">
+                        <div class="fullscreen-controls"><button class="close-fullscreen" onclick="toggleFullscreen(${video.id})" title="फुल स्क्रीन बंद करें (ESC)">✕</button></div>
+                        <div class="video-loader" id="loader_${video.id}">
+                            <div class="loader-spinner"></div>
+                            <div class="loader-text">वीडियो लोड हो रहा है...</div>
+                        </div>
+                        <div id="player_${video.id}" class="youtube-player-div"></div>
+                        ${getSideActionsHTML(video, likeCount, isLiked, comments, isSaved)}
+                        <div class="video-info-overlay" id="overlay_${video.id}">
+                            <div class="video-title-compact">${escapeHTML(video.title)}</div>
+                            <div class="video-desc-compact">${escapeHTML(video.desc)}</div>
+                        </div>
+                    </div>
+                    <div class="comment-section" id="comments_${video.id}" style="display:none;">
+                        <h4>💭 टिप्पणियाँ (${comments.length})</h4>
+                        <div class="comment-input"><input type="text" id="cinput_${video.id}" placeholder="अपनी राय लिखें..."><button onclick="addComment(${video.id})">भेजें</button></div>
+                        <div class="comments-list" id="clist_${video.id}"></div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="video-wrapper ${ratioClass}" id="wrapper_${video.id}">
+                        <div class="fullscreen-controls"><button class="close-fullscreen" onclick="toggleFullscreen(${video.id})" title="फुल स्क्रीन बंद करें (ESC)">✕</button></div>
+                        <div class="video-loader" id="loader_${video.id}">
+                            <div class="loader-spinner"></div>
+                            <div class="loader-text">वीडियो लोड हो रहा है...</div>
+                        </div>
+                        <div id="player_${video.id}" class="youtube-player-div"></div>
+                    </div>
+                    ${getActionsHTML(video, likeCount, isLiked, comments, isSaved)}
+                    <div class="video-info-compact"><div class="video-title-compact">${escapeHTML(video.title)}</div><div class="video-desc-compact">${escapeHTML(video.desc)}</div></div>
+                    <div class="comment-section" id="comments_${video.id}" style="display:none;">
+                        <h4>💭 टिप्पणियाँ (${comments.length})</h4>
+                        <div class="comment-input"><input type="text" id="cinput_${video.id}" placeholder="अपनी राय लिखें..."><button onclick="addComment(${video.id})">भेजें</button></div>
+                        <div class="comments-list" id="clist_${video.id}"></div>
+                    </div>
+                `;
+            }
+        }
+        
+        function loadVideos(category = 'all') {
+            resetAllPlayers();
+            const videoList = document.getElementById('videoList'); videoList.innerHTML = '';
+            const filtered = category === 'all' ? videos : videos.filter(v => v.category === category);
+            if (filtered.length === 0) { videoList.innerHTML = '<div style="padding: 40px; text-align: center; color: #aaa;">कोई वीडियो उपलब्ध नहीं है।</div>'; return; }
+            
+            filtered.forEach((video, index) => {
+                const likeCount = parseInt(localStorage.getItem(`like_${video.id}`) || '0'); 
+                const isLiked = localStorage.getItem(`liked_${video.id}`) === 'true'; 
+                const isSaved = localStorage.getItem(`saved_${video.id}`) === 'true';
+                const comments = JSON.parse(localStorage.getItem(`comments_${video.id}`) || '[]'); 
+                const isPortrait = (video.aspectRatio === '9:16');
+                const card = document.createElement('div'); 
+                card.className = 'video-card' + (isPortrait ? ' portrait-card' : '');
+                card.innerHTML = buildCardHTML(video, likeCount, isLiked, comments, isSaved);
+                videoList.appendChild(card);
+                
+                if ((index + 1) % 2 === 0 && index !== filtered.length - 1) {
+                    const adCard = document.createElement('div'); adCard.className = 'ad-card';
+                    adCard.innerHTML = `<div class="ad-card-label">विज्ञापन</div><div class="ad-card-content"><h3>📢 In-Feed विज्ञापन</h3><p>(AdSense Native / Banner Code यहाँ पेस्ट करें)</p></div>`;
+                    videoList.appendChild(adCard);
+                }
+            });
+            
+            filtered.forEach(video => updateCommentUI(video.id));
+            
+            setTimeout(setupIntersectionObserver, 100);
+            muteAdVideos();
+        }
+        
+        function renderLibraryVideos(containerId, videoList) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            resetAllPlayers();
+
+            if (videoList.length === 0) {
+                container.innerHTML = '<div style="padding: 40px; text-align: center; color: #aaa;">कोई वीडियो उपलब्ध नहीं है।</div>';
+                return;
+            }
+            
+            videoList.forEach(video => {
+                const likeCount = parseInt(localStorage.getItem(`like_${video.id}`) || '0'); 
+                const isLiked = localStorage.getItem(`liked_${video.id}`) === 'true'; 
+                const isSaved = localStorage.getItem(`saved_${video.id}`) === 'true';
+                const comments = JSON.parse(localStorage.getItem(`comments_${video.id}`) || '[]'); 
+                const isPortrait = (video.aspectRatio === '9:16');
+                const card = document.createElement('div'); 
+                card.className = 'video-card' + (isPortrait ? ' portrait-card' : '');
+                card.innerHTML = buildCardHTML(video, likeCount, isLiked, comments, isSaved);
+                container.appendChild(card);
+            });
+            
+            videoList.forEach(video => updateCommentUI(video.id));
+            
+            setTimeout(setupIntersectionObserver, 100);
+            muteAdVideos();
+        }
+
+        function showSavedTab() {
+            const savedVideos = videos.filter(v => localStorage.getItem(`saved_${v.id}`) === 'true');
+            renderLibraryVideos('saved-list', savedVideos);
+        }
+        
+        function toggleFullscreen(videoId) {
+            ensurePlayer(videoId);
+            manualLock = videoId;
+            const wrapper = document.getElementById(`wrapper_${videoId}`);
+            const isCurrentlyFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isCurrentlyFullscreen) {
+                let promise = null;
+                if (wrapper.requestFullscreen) promise = wrapper.requestFullscreen(); else if (wrapper.webkitRequestFullscreen) promise = wrapper.webkitRequestFullscreen(); else if (wrapper.mozRequestFullScreen) promise = wrapper.mozRequestFullScreen(); else if (wrapper.msRequestFullscreen) promise = wrapper.msRequestFullscreen();
+                if (promise) promise.catch(err => console.warn("Fullscreen request failed:", err));
+                pauseAllVideos(); visibleVideoId = videoId;
+                setTimeout(() => tryPlay(videoId), 600);
+            } else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); else if (document.mozCancelFullScreen) document.mozCancelFullScreen(); else if (document.msExitFullscreen) document.msExitFullscreen(); }
+        }
+        function handleFullscreenChange() {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFullscreen) { document.body.classList.remove('fullscreen-mode'); if (visibleVideoId && ytPlayers[visibleVideoId] && typeof ytPlayers[visibleVideoId].pauseVideo === 'function') ytPlayers[visibleVideoId].pauseVideo(); visibleVideoId = null; manualLock = null; scheduleSync(300); } else { document.body.classList.add('fullscreen-mode'); }
+        }
+        document.addEventListener('fullscreenchange', handleFullscreenChange); document.addEventListener('webkitfullscreenchange', handleFullscreenChange); document.addEventListener('mozfullscreenchange', handleFullscreenChange); document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        
+        window.addEventListener('scroll', () => {
+            manualLock = null;
+            scheduleSync(200);
+        }, { passive: true });
+        
+        function setupIntersectionObserver() {
+            if (observer) observer.disconnect();
+            observer = new IntersectionObserver((entries) => {
+                if (isOrientationChanging) return; 
+                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) return;
+                
+                entries.forEach(entry => {
+                    const videoId = entry.target.getAttribute('data-video-id');
+                    if (!entry.isIntersecting) {
+                        const r = entry.boundingClientRect;
+                        if (ytPlayers[videoId] && (r.top > innerHeight * 1.5 || r.bottom < -innerHeight * 1.5)) {
+                            destroyPlayer(videoId);
+                        }
+                    }
+                });
+                scheduleSync(150);
+            }, { threshold: [0, 0.25, 0.5, 0.75, 1.0] });
+            document.querySelectorAll('.video-wrapper').forEach(wrapper => { 
+                const videoId = wrapper.id.replace('wrapper_', ''); 
+                wrapper.setAttribute('data-video-id', videoId); 
+                observer.observe(wrapper); 
+            });
+        }
+        
+        function pauseAllVideos() { 
+            Object.keys(ytPlayers).forEach(key => {
+                const player = ytPlayers[key];
+                if (player && typeof player.pauseVideo === 'function') {
+                    try { player.pauseVideo(); } catch(e) {}
+                }
+                clearTimeout(playWatchdog[key]);
+                hideTapToPlay(key);
+            });
+            Object.keys(pendingPlay).forEach(key => delete pendingPlay[key]);
+            visibleVideoId = null; 
+        }
+        
+        function toggleLike(videoId, btn, currentCount) {
+            const isLiked = localStorage.getItem(`liked_${videoId}`) === 'true'; let count = currentCount;
+            if (isLiked) { localStorage.removeItem(`liked_${videoId}`); count--; btn.classList.remove('liked'); btn.querySelector('.icon').textContent = '🤍'; }
+            else { localStorage.setItem(`liked_${videoId}`, 'true'); count++; btn.classList.add('liked'); btn.querySelector('.icon').textContent = '❤️'; showToast('❤️ पसंद किया!'); }
+            localStorage.setItem(`like_${videoId}`, count); btn.querySelector('.label').textContent = count;
+        }
+        
+        function toggleSave(videoId, btn) {
+            const isSaved = localStorage.getItem(`saved_${videoId}`) === 'true';
+            if (isSaved) {
+                localStorage.removeItem(`saved_${videoId}`);
+                btn.classList.remove('saved');
+                btn.querySelector('.icon').textContent = '🔖';
+                showToast('🗑️ सेव सूची से हटा दिया गया');
+            } else {
+                localStorage.setItem(`saved_${videoId}`, 'true');
+                btn.classList.add('saved');
+                btn.querySelector('.icon').textContent = '💾';
+                showToast('💾 वीडियो सेव कर लिया गया!');
+            }
+            if (currentPage === 'saved') showSavedTab();
+        }
+
+        function toggleComments(videoId) { const section = document.getElementById(`comments_${videoId}`); section.style.display = section.style.display === 'none' ? 'block' : 'none'; }
+        
+        function updateCommentUI(videoId) {
+            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]');
+            const clist = document.getElementById(`clist_${videoId}`);
+            const header = document.querySelector(`#comments_${videoId} h4`);
+            
+            if (clist) {
+                clist.innerHTML = comments.map((c, i) => 
+                    `<div class="comment-item"><div><span class="name">${escapeHTML(c.name)}:</span> ${escapeHTML(c.text)}</div><button class="del" onclick="deleteComment(${videoId}, ${i})">✕</button></div>`
+                ).join('');
+            }
+            if (header) header.textContent = `💭 टिप्पणियाँ (${comments.length})`;
+
+            const wrapper = document.getElementById(`wrapper_${videoId}`);
+            if (wrapper) {
+                wrapper.querySelectorAll(`button[onclick="toggleComments(${videoId})"] .label`).forEach(btn => {
+                    btn.textContent = comments.length;
+                });
+            }
+        }
+
+        function addComment(videoId) {
+            const input = document.getElementById(`cinput_${videoId}`); 
+            const text = input.value.trim(); 
+            if (!text) return;
+            
+            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]'); 
+            const name = localStorage.getItem('userName') || 'अतिथि';
+            
+            comments.unshift({ name, text, time: Date.now() }); 
+            localStorage.setItem(`comments_${videoId}`, JSON.stringify(comments)); 
+            input.value = ''; 
+            showToast('✅ टिप्पणी जोड़ी गई!');
+            
+            updateCommentUI(videoId);
+        }
+        
+        function deleteComment(videoId, index) {
+            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]'); 
+            comments.splice(index, 1); 
+            localStorage.setItem(`comments_${videoId}`, JSON.stringify(comments));
+            
+            updateCommentUI(videoId);
+            showToast('🗑️ टिप्पणी हटाई गई');
+        }
+        
+        function openShare(videoId) { 
+            currentShareId = videoId; 
+            const video = videos.find(v => v.id == videoId); 
+            if (!video) return;
+            window.currentShareUrl = `https://youtu.be/${video.youtubeId}`; 
+            window.currentShareText = `${video.title} - सबकुछ पर देखें`; 
+            document.getElementById('shareModal').classList.add('show'); 
+        }
+        
+        function shareVia(platform) {
+            const url = encodeURIComponent(window.currentShareUrl); const text = encodeURIComponent(window.currentShareText); let shareUrl = '';
+            switch(platform) { 
+                case 'whatsapp': shareUrl = `https://wa.me/?text=${text}%20${url}`; break; 
+                case 'facebook': shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break; 
+                case 'twitter': shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`; break; 
+                case 'telegram': shareUrl = `https://t.me/share/url?url=${url}&text=${text}`; break; 
+                case 'copy': navigator.clipboard.writeText(window.currentShareUrl).then(() => showToast('🔗 लिंक कॉपी हो गया!')); closeModal(); return; 
+                case 'more': if (navigator.share) { navigator.share({ title: window.currentShareText, url: window.currentShareUrl }); } else { showToast('⚠️ शेयर उपलब्ध नहीं'); } closeModal(); return; 
+            }
+            window.open(shareUrl, '_blank'); closeModal();
+        }
+        function closeModal() { document.getElementById('shareModal').classList.remove('show'); }
+        
+        function filterCategory(category) { 
+            const catContainer = document.getElementById('mainCategories');
+            if (catContainer) {
+                catContainer.innerHTML = CATEGORIES.map(cat => `
+                    <button class="category-btn ${cat.id === category ? 'active' : ''}" onclick="filterCategory('${cat.id}')">${cat.label}</button>
+                `).join('');
+            }
+            loadVideos(category); 
+        }
+        
+        function showPage(page, navItem) {
+            currentPage = page; 
+            renderDynamicButtons(); 
+            
+            document.querySelectorAll('.page-section').forEach(section => section.style.display = 'none'); 
+            const targetPage = document.getElementById(`page-${page}`); 
+            if (targetPage) targetPage.style.display = 'block';
+            
+            if (page === 'home') { 
+                if (videos.length === 0 && !isLoadingVideos) loadVideosFromSheet(); 
+                else loadVideos(); 
+            }
+            else if (page === 'search') { 
+                pauseAllVideos(); 
+                setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) searchInput.focus(); }, 100); 
+            }
+            else if (page === 'saved') {
+                pauseAllVideos();
+                showSavedTab();
+            }
+            else if (page === 'upload') { 
+                pauseAllVideos(); 
+                if (!localStorage.getItem('userName')) { 
+                    const name = prompt('अपना नाम दर्ज करें:'); 
+                    if (name) localStorage.setItem('userName', name); 
+                } 
+            }
+            else if (page === 'profile') { 
+                pauseAllVideos(); 
+                loadProfilePage(); 
+            }
+            history.pushState({ page: page }, '', '#' + page);
+        }
+        
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim(); 
+            const resultsContainer = document.getElementById('searchResults'); 
+            resultsContainer.innerHTML = '';
+            if (!query) { resultsContainer.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">कृपया खोजने के लिए कुछ लिखें।</p>'; return; }
+            
+            const filtered = videos.filter(v => v.title.toLowerCase().includes(query) || v.desc.toLowerCase().includes(query) || v.category.toLowerCase().includes(query));
+            if (filtered.length === 0) { resultsContainer.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">कोई परिणाम नहीं मिला।</p>'; return; }
+            
+            filtered.forEach(video => { 
+                const card = document.createElement('div'); 
+                card.className = 'video-card'; 
+                card.style.marginBottom = '10px'; 
+                card.innerHTML = `<div class="video-info-compact" style="cursor: pointer;" onclick="showPage('home'); setTimeout(() => { const el = document.getElementById('wrapper_${video.id}'); if(el) el.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 300);"><div class="video-title-compact">${escapeHTML(video.title)}</div><div class="video-desc-compact">${escapeHTML(video.desc)}</div><div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;"><span style="background: #2e7d32; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px;">${getCategoryName(video.category)}</span><span style="color: #f9a825; font-size: 12px;">▶️ देखें</span></div></div>`; 
+                resultsContainer.appendChild(card); 
+            });
+        }
+        function getCategoryName(cat) { const names = { 'song': 'लोकगीत', 'drama': 'नाटक', 'comedy': 'हास्य', 'story': 'कहानी', 'culture': 'संस्कृति' }; return names[cat] || cat; }
+        
+        function submitVideo() {
+            const title = document.getElementById('uploadTitle').value.trim(); 
+            const youtubeId = document.getElementById('uploadYoutubeId').value.trim(); 
+            const category = document.getElementById('uploadCategory').value; 
+            const aspectRatio = document.getElementById('uploadAspectRatio').value;
+            
+            if (!title || !youtubeId) { 
+                showToast('⚠️ कृपया शीर्षक और YouTube ID दोनों भरें!'); 
+                return; 
+            }
+            
+            let cleanId = youtubeId; 
+            if (youtubeId.includes('v=')) cleanId = youtubeId.split('v=')[1].split('&')[0]; 
+            else if (youtubeId.includes('youtu.be/')) cleanId = youtubeId.split('youtu.be/')[1].split('?')[0];
+            
+            const newVideo = { 
+                id: Date.now(), 
+                title: title, 
+                desc: "उपयोगकर्ता द्वारा जोड़ा गया", 
+                category: category, 
+                youtubeId: cleanId, 
+                aspectRatio: aspectRatio 
+            };
+            
+            const localVideos = JSON.parse(localStorage.getItem('localVideos') || '[]');
+            localVideos.unshift(newVideo);
+            localStorage.setItem('localVideos', JSON.stringify(localVideos));
+            
+            videos.unshift(newVideo); 
+            
+            showToast('✅ वीडियो सफलतापूर्वक जोड़ा गया और सेव हो गया!'); 
+            document.getElementById('uploadTitle').value = ''; 
+            document.getElementById('uploadYoutubeId').value = '';
+            
+            setTimeout(() => { showPage('home', null); }, 1000);
+        }
+
+        function reportVideo(videoId) {
+            const video = videos.find(v => v.id == videoId);
+            if (!video) return;
+            const reason = prompt(`"${video.title}" की रिपोर्ट क्यों करना चाहते हैं?\n(जैसे: अनुचित सामग्री, स्पैम, कॉपीराइट, आदि)\n\nकारण:`);
+            if (reason !== null && reason.trim() !== '') {
+                let reports = JSON.parse(localStorage.getItem('reportedVideos') || '[]');
+                const currentUser = localStorage.getItem('userName') || 'अतिथि (Guest)';
+                
+                reports.push({ 
+                    id: videoId, 
+                    title: video.title, 
+                    reporter: currentUser,
+                    reason: reason.trim(), 
+                    time: new Date().toLocaleString('hi-IN') 
+                });
+                localStorage.setItem('reportedVideos', JSON.stringify(reports));
+                showToast('🚩 वीडियो की रिपोर्ट दर्ज कर दी गई है। धन्यवाद!');
+            } else if (reason !== null) {
+                showToast('⚠️ रिपोर्ट का कारण लिखना आवश्यक है।');
+            }
+        }
+        
+        function toggleLogin() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            if (isLoggedIn) {
+                localStorage.removeItem('isLoggedIn');
+                showToast('लॉगआउट सफल! आप अब अतिथि मोड में हैं।');
+            } else {
+                const name = prompt('कृपया अपना नाम दर्ज करें (यह आपकी रिपोर्ट ID के रूप में उपयोग होगा):');
+                if (name && name.trim() !== '') {
+                    localStorage.setItem('userName', name.trim());
+                } else {
+                    localStorage.setItem('userName', 'अतिथि');
+                }
+                localStorage.setItem('isLoggedIn', 'true');
+                showToast('लॉगिन सफल!');
+            }
+            loadProfilePage();
+        }
+
+        function getCreatorStats() {
+            const userName = localStorage.getItem('userName') || 'अतिथि';
+            const followers = parseInt(localStorage.getItem(`followers_${userName}`) || '0');
+            const views = parseInt(localStorage.getItem(`views_${userName}`) || '0');
+            const watchtime = parseInt(localStorage.getItem(`watchtime_${userName}`) || '0');
+            const foundingNumber = parseInt(localStorage.getItem(`foundingNumber_${userName}`) || '0');
+            const payoutStatus = localStorage.getItem(`payoutStatus_${userName}`) || 'not_eligible';
+            const claimedAt = localStorage.getItem(`claimedAt_${userName}`) || '';
+            return { userName, followers, views, watchtime, foundingNumber, payoutStatus, claimedAt };
+        }
+        
+        function updateRewardDashboard() {
+            const stats = getCreatorStats();
+            const followersPct = Math.min(100, (stats.followers / REWARD_TARGETS.followers) * 100);
+            const viewsPct = Math.min(100, (stats.views / REWARD_TARGETS.views) * 100);
+            const watchtimePct = Math.min(100, (stats.watchtime / REWARD_TARGETS.watchtime) * 100);
+            
+            document.getElementById('followersBar').style.width = followersPct + '%';
+            document.getElementById('viewsBar').style.width = viewsPct + '%';
+            document.getElementById('watchtimeBar').style.width = watchtimePct + '%';
+            
+            if (followersPct >= 100) document.getElementById('followersBar').classList.add('progress-complete');
+            if (viewsPct >= 100) document.getElementById('viewsBar').classList.add('progress-complete');
+            if (watchtimePct >= 100) document.getElementById('watchtimeBar').classList.add('progress-complete');
+            
+            document.getElementById('followersValue').textContent = `${stats.followers.toLocaleString('hi-IN')} / ${REWARD_TARGETS.followers.toLocaleString('hi-IN')}`;
+            document.getElementById('viewsValue').textContent = `${stats.views.toLocaleString('hi-IN')} / ${REWARD_TARGETS.views.toLocaleString('hi-IN')}`;
+            document.getElementById('watchtimeValue').textContent = `${stats.watchtime.toLocaleString('hi-IN')} / ${REWARD_TARGETS.watchtime.toLocaleString('hi-IN')}`;
+            
+            if (stats.foundingNumber > 0 && stats.foundingNumber <= FOUNDING_CREATOR_LIMIT) {
+                document.getElementById('foundingBadge').style.display = 'block';
+                document.getElementById('foundingNumber').textContent = stats.foundingNumber;
+            }
+            
+            const statusEl = document.getElementById('rewardStatus');
+            const claimBtn = document.getElementById('claimRewardBtn');
+            const allTargetsMet = followersPct >= 100 && viewsPct >= 100 && watchtimePct >= 100;
+            
+            if (stats.payoutStatus === 'reward_dispatched') {
+                statusEl.className = 'reward-status status-dispatched';
+                statusEl.innerHTML = `✅ रिवॉर्ड भेज दिया गया!<br><small style="opacity:0.8">भेजा गया: ${stats.claimedAt}</small>`;
+                claimBtn.disabled = true; claimBtn.textContent = '✅ रिवॉर्ड प्राप्त हो चुका है';
+            } else if (stats.payoutStatus === 'eligible_processing') {
+                statusEl.className = 'reward-status status-processing';
+                statusEl.innerHTML = `📦 रिवॉर्ड प्रोसेसिंग में है<br><small style="opacity:0.8">अनुमानित समय: 30-45 दिन</small>`;
+                claimBtn.disabled = true; claimBtn.textContent = '⏳ रिवॉर्ड जल्द आएगा';
+            } else if (allTargetsMet) {
+                statusEl.className = 'reward-status status-processing';
+                statusEl.innerHTML = `🎉 बधाई! आप मानदंड पूरा कर चुके हैं!<br><small style="opacity:0.8">अब रिवॉर्ड क्लेम करें</small>`;
+                claimBtn.disabled = false; claimBtn.textContent = '🎁 रिवॉर्ड क्लेम करें';
+            } else {
+                statusEl.className = 'reward-status status-not-eligible';
+                const remaining = [];
+                if (followersPct < 100) remaining.push(`${REWARD_TARGETS.followers - stats.followers} फॉलोअर्स`);
+                if (viewsPct < 100) remaining.push(`${(REWARD_TARGETS.views - stats.views).toLocaleString('hi-IN')} व्यूज़`);
+                if (watchtimePct < 100) remaining.push(`${REWARD_TARGETS.watchtime - stats.watchtime} घंटे`);
+                statusEl.innerHTML = `⏳ बाकी: ${remaining.join(', ')}<br><small style="opacity:0.8">मानदंड पूरे करें और मोनेटाइजेशन अनलॉक करें</small>`;
+                claimBtn.disabled = true; claimBtn.textContent = '🔒 रिवॉर्ड क्लेम करें (मानदंड पूरे करें)';
+            }
+        }
+        
+        function claimReward() {
+            const stats = getCreatorStats();
+            const address = localStorage.getItem(`address_${stats.userName}`) || '';
+            if (!address.trim()) { showToast('⚠️ पहले प्रोफ़ाइल में अपना पता भरें!'); return; }
+            if (confirm(`क्या आप रिवॉर्ड क्लेम करना चाहते हैं?\n\nनाम: ${stats.userName}\nपता: ${address}\n\nआपका रिवॉर्ड 30-45 दिनों में भेजा जाएगा।`)) {
+                if (stats.foundingNumber === 0) {
+                    const currentFounding = parseInt(localStorage.getItem('totalFoundingCreators') || '0') + 1;
+                    if (currentFounding <= FOUNDING_CREATOR_LIMIT) {
+                        localStorage.setItem(`foundingNumber_${stats.userName}`, currentFounding);
+                        localStorage.setItem('totalFoundingCreators', currentFounding);
+                    }
+                }
+                localStorage.setItem(`payoutStatus_${stats.userName}`, 'eligible_processing');
+                localStorage.setItem(`claimedAt_${stats.userName}`, new Date().toLocaleDateString('hi-IN'));
+                showToast('🎉 रिवॉर्ड क्लेम किया गया! जल्द ही आपके घर पहुंचेगा।');
+                updateRewardDashboard();
+            }
+        }
+        
+        function loadProfilePage() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const name = localStorage.getItem('userName') || 'अतिथि';
+            
+            document.getElementById('profileName').textContent = name;
+            document.getElementById('profileNameInput').value = name === 'अतिथि' ? '' : name;
+            document.getElementById('profileAddress').value = localStorage.getItem(`address_${name}`) || '';
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            if (isLoggedIn) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+            } else {
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+            }
+            
+            updateRewardDashboard();
+        }
+        
+        function saveProfile() {
+            const name = document.getElementById('profileNameInput').value.trim();
+            const address = document.getElementById('profileAddress').value.trim();
+            if (name) {
+                localStorage.setItem('userName', name);
+                document.getElementById('profileName').textContent = name;
+                if (address) localStorage.setItem(`address_${name}`, address);
+                showToast('✅ प्रोफ़ाइल अपडेट हो गई!');
+                updateRewardDashboard();
+            } else { showToast('⚠️ नाम खाली नहीं हो सकता!'); }
+        }
+
+        function clearAllData() { 
+            if (confirm('क्या आप वाकई सभी लाइक, कमेंट, रिपोर्ट्स, सेव किए गए वीडियो और सेटिंग्स साफ़ करना चाहते हैं?')) { 
+                localStorage.clear(); 
+                localStorage.setItem('userName', 'उपयोगकर्ता'); 
+                showToast('🗑️ सभी डेटा साफ़ कर दिया गया!'); 
+                setTimeout(() => location.reload(), 1000); 
+            } 
+        }
+        function shareApp() { const appUrl = window.location.href; const shareText = "सबकुछ ऐप जरूर देखें! गीत, नाटक, कहानियाँ। अभी देखें: " + appUrl; if (navigator.share) { navigator.share({ title: 'सबकुछ', text: shareText, url: appUrl }).catch(() => {}); } else { navigator.clipboard.writeText(shareText).then(() => showToast('📋 शेयर मैसेज कॉपी हो गया!')).catch(() => showToast('⚠️ कॉपी नहीं हुआ')); } }
+        
+        window.addEventListener('popstate', function(event) {
+            if (document.fullscreenElement || document.webkitFullscreenElement) { 
+                if (document.exitFullscreen) document.exitFullscreen(); 
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); 
+                history.pushState({ page: currentPage }, '', '#' + currentPage); 
+                return; 
+            }
+            if (document.getElementById('shareModal').classList.contains('show')) { 
+                closeModal(); 
+                history.pushState({ page: currentPage }, '', '#' + currentPage); 
+                return; 
+            }
+            if (currentPage !== 'home') { 
+                showPage('home', null); 
+            } else { 
+                const currentTime = new Date().getTime(); 
+                if (lastBackPressTime && (currentTime - lastBackPressTime) < EXIT_DELAY) { 
+                    showToast('👋 अलविदा! ऐप बंद हो रहा है...'); 
+                    setTimeout(() => { 
+                        if (navigator.app && navigator.app.exitApp) navigator.app.exitApp(); 
+                        else window.close(); 
+                    }, 500); 
+                } else { 
+                    lastBackPressTime = currentTime; 
+                    showToast('🔙 ऐप बंद करने के लिए फिर से बैक बटन दबाएं'); 
+                    history.pushState({ page: 'home_exit_warning' }, '', '#home_exit'); 
+                } 
+            }
+        });
+        
+        window.addEventListener('orientationchange', function() { 
+            isOrientationChanging = true;
+            pauseAllVideos();
+            setTimeout(() => { 
+                isOrientationChanging = false;
+                scheduleSync(300);
+            }, 500); 
+        });
+        
+        renderDynamicButtons();
+        if (!localStorage.getItem('userName')) localStorage.setItem('userName', 'उपयोगकर्ता');
+        const initialHash = window.location.hash.replace('#', '') || 'home'; 
+        showPage(initialHash, null);
+    </script>
 </body>
 </html>
