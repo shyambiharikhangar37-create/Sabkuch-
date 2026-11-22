@@ -168,38 +168,11 @@
             position: relative;
         }
         
-        /* ✅ FIX: Loader पूरी तरह हट जाएगा जब player ready हो */
+        /* ✅ Loader पूरी तरह हटा दिया - अब कभी नहीं दिखेगा */
         .video-loader {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1005;
-        }
-        .video-loader.hidden {
             display: none !important;
         }
-        .loader-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(249, 168, 37, 0.2);
-            border-top: 4px solid #f9a825;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        .loader-text {
-            color: #f9a825;
-            font-size: 12px;
-            margin-top: 12px;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-
-        /* ✅ Tap-play overlay - केवल तब तक दिखेगा जब तक player ready न हो */
+        
         .tap-play-overlay {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
@@ -284,7 +257,6 @@
             position: relative; z-index: 10;
         }
         
-        /* ✅ Side actions - केवल तब तक दिखेंगे जब तक player ready न हो */
         .video-actions-side {
             position: absolute;
             right: 12px;
@@ -339,7 +311,6 @@
         
         .video-info-compact { padding: 10px 14px 8px 14px; position: relative; z-index: 10; background: #1a241a; }
         
-        /* ✅ Video info overlay - केवल तब तक दिखेगा जब तक player ready न हो */
         .video-info-overlay {
             position: absolute;
             bottom: 0;
@@ -861,24 +832,13 @@
             setupIntersectionObserver();
         };
 
-        /* ✅ नया: Player ready होने पर सारा custom overlay हटा दो */
         function clearAllOverlays(videoId) {
             const wrapper = document.getElementById('wrapper_' + videoId);
             if (!wrapper) return;
-            
-            // Loader हटाओ
-            const loader = document.getElementById('loader_' + videoId);
-            if (loader) loader.classList.add('hidden');
-            
-            // Tap-play overlay हटाओ
             const tapOverlay = wrapper.querySelector('.tap-play-overlay');
             if (tapOverlay) tapOverlay.classList.add('hidden');
-            
-            // Side actions हटाओ (केवल portrait में थे)
             const sideActions = wrapper.querySelector('.video-actions-side');
             if (sideActions) sideActions.classList.add('hidden');
-            
-            // Video info overlay हटाओ (केवल portrait में था)
             const overlay = wrapper.querySelector('.video-info-overlay');
             if (overlay) overlay.classList.add('hidden');
         }
@@ -899,7 +859,6 @@
                     events: {
                         'onReady': function() {
                             playerReady[videoId] = true;
-                            // ✅ Player ready होते ही सारा overlay हटा दो
                             clearAllOverlays(videoId);
                             if (pendingPlay[videoId]) {
                                 pendingPlay[videoId] = false;
@@ -908,19 +867,11 @@
                         },
                         'onStateChange': function(event) {
                             const st = event.data;
-                            const recentAttempt = Date.now() - (lastPlayAttempt[videoId] || 0) < 6000;
 
                             if (st === YT.PlayerState.PLAYING) {
                                 hasPlayed[videoId] = true;
                                 clearTimeout(playWatchdog[videoId]);
-                            } else if (st === YT.PlayerState.BUFFERING) {
-                                // केवल तभी loader दिखाओ जब वीडियो पहले से चल रहा हो
-                                const loader = document.getElementById('loader_' + videoId);
-                                if (loader && visibleVideoId == videoId && hasPlayed[videoId]) {
-                                    loader.classList.remove('hidden');
-                                }
                             } else if (st === YT.PlayerState.ENDED) {
-                                // वीडियो खत्म होने पर overlays वापस दिखाओ
                                 const wrapper = document.getElementById('wrapper_' + videoId);
                                 if (wrapper) {
                                     const sideActions = wrapper.querySelector('.video-actions-side');
@@ -931,17 +882,7 @@
                             }
                         },
                         'onError': function(event) {
-                            const loader = document.getElementById('loader_' + videoId);
                             console.error(`YouTube Error for video ${videoId}:`, event.data);
-                            if (loader) {
-                                let errorMsg = '⚠️ वीडियो लोड नहीं हो सका';
-                                if (event.data === 2) errorMsg = '⚠️ गलत Video ID';
-                                else if (event.data === 5) errorMsg = '⚠️ HTML5 player error';
-                                else if (event.data === 100) errorMsg = '⚠️ वीडियो नहीं मिला';
-                                else if (event.data === 101 || event.data === 150) errorMsg = '⚠️ यह वीडियो embed नहीं हो सकता';
-                                loader.innerHTML = `<div style="color: #c62828; text-align: center; padding: 10px;">${errorMsg}<br><small>कृपया इंटरनेट जांचें या बाद में देखें</small></div>`;
-                                loader.classList.remove('hidden');
-                            }
                         }
                     }
                 }); 
@@ -963,7 +904,6 @@
                 let st = -1;
                 try { st = player.getPlayerState(); } catch(e) {}
                 if (st !== YT.PlayerState.PLAYING) {
-                    // Autoplay block हो गया - tap overlay दिखाओ
                     showTapToPlay(videoId);
                 }
             }, 4000);
@@ -1033,8 +973,6 @@
                 d.className = 'youtube-player-div';
                 wrapper.appendChild(d);
             }
-            const loader = document.getElementById('loader_' + videoId);
-            if (loader) loader.classList.remove('hidden');
         }
 
         function resetAllPlayers() {
@@ -1105,10 +1043,6 @@
                 return `
                     <div class="video-wrapper ${ratioClass}" id="wrapper_${video.id}">
                         <div class="fullscreen-controls"><button class="close-fullscreen" onclick="toggleFullscreen(${video.id})" title="फुल स्क्रीन बंद करें (ESC)">✕</button></div>
-                        <div class="video-loader" id="loader_${video.id}">
-                            <div class="loader-spinner"></div>
-                            <div class="loader-text">वीडियो लोड हो रहा है...</div>
-                        </div>
                         <div id="player_${video.id}" class="youtube-player-div"></div>
                         ${getSideActionsHTML(video, likeCount, isLiked, comments, isSaved)}
                         <div class="video-info-overlay" id="overlay_${video.id}">
@@ -1126,10 +1060,6 @@
                 return `
                     <div class="video-wrapper ${ratioClass}" id="wrapper_${video.id}">
                         <div class="fullscreen-controls"><button class="close-fullscreen" onclick="toggleFullscreen(${video.id})" title="फुल स्क्रीन बंद करें (ESC)">✕</button></div>
-                        <div class="video-loader" id="loader_${video.id}">
-                            <div class="loader-spinner"></div>
-                            <div class="loader-text">वीडियो लोड हो रहा है...</div>
-                        </div>
                         <div id="player_${video.id}" class="youtube-player-div"></div>
                     </div>
                     ${getActionsHTML(video, likeCount, isLiked, comments, isSaved)}
